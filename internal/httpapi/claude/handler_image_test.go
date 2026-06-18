@@ -118,11 +118,11 @@ func TestPreprocessClaudeImageInputsDeduplicatesSameImage(t *testing.T) {
 				"role": "user",
 				"content": []any{
 					map[string]any{
-						"type": "image",
+						"type":   "image",
 						"source": map[string]any{"type": "base64", "media_type": "image/png", "data": b64},
 					},
 					map[string]any{
-						"type": "image",
+						"type":   "image",
 						"source": map[string]any{"type": "base64", "media_type": "image/png", "data": b64},
 					},
 				},
@@ -205,7 +205,7 @@ func TestPreprocessClaudeImageInputsUploadError(t *testing.T) {
 				"role": "user",
 				"content": []any{
 					map[string]any{
-						"type": "image",
+						"type":   "image",
 						"source": map[string]any{"type": "base64", "media_type": "image/png", "data": b64},
 					},
 				},
@@ -240,7 +240,7 @@ func TestPreprocessClaudeImageInputsNilDS(t *testing.T) {
 				"role": "user",
 				"content": []any{
 					map[string]any{
-						"type": "image",
+						"type":   "image",
 						"source": map[string]any{"type": "base64", "media_type": "image/png", "data": b64},
 					},
 				},
