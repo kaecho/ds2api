@@ -76,12 +76,6 @@ func (h *Handler) handleClaudeDirect(w http.ResponseWriter, r *http.Request) boo
 		writeClaudeError(w, http.StatusBadRequest, "invalid json")
 		return true
 	}
-	norm, err := normalizeClaudeRequest(h.Store, req)
-	if err != nil {
-		writeClaudeError(w, http.StatusBadRequest, err.Error())
-		return true
-	}
-	exposeThinking := norm.Standard.Thinking
 	a, err := h.Auth.Determine(r)
 	if err != nil {
 		status := http.StatusUnauthorized
@@ -91,6 +85,16 @@ func (h *Handler) handleClaudeDirect(w http.ResponseWriter, r *http.Request) boo
 		writeClaudeError(w, status, err.Error())
 		return true
 	}
+	if err := preprocessClaudeImageInputs(r.Context(), h.DS, a, req); err != nil {
+		writeClaudeError(w, http.StatusBadRequest, err.Error())
+		return true
+	}
+	norm, err := normalizeClaudeRequest(h.Store, req)
+	if err != nil {
+		writeClaudeError(w, http.StatusBadRequest, err.Error())
+		return true
+	}
+	exposeThinking := norm.Standard.Thinking
 	var sessionID string
 	defer func() {
 		h.autoDeleteRemoteSession(r.Context(), a, sessionID)

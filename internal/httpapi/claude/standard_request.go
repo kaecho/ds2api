@@ -45,6 +45,7 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 	if len(toolNames) == 0 && len(toolsRequested) > 0 {
 		toolNames = []string{"__any_tool__"}
 	}
+	refFileIDs := collectRefFileIDsFromRequest(req)
 
 	return claudeNormalizedRequest{
 		Standard: promptcompat.StandardRequest{
@@ -60,6 +61,7 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 			Stream:          util.ToBool(req["stream"]),
 			Thinking:        thinkingEnabled,
 			Search:          searchEnabled,
+			RefFileIDs:      refFileIDs,
 		},
 		NormalizedMessages: normalizedMessages,
 	}, nil
@@ -97,6 +99,66 @@ func injectClaudeToolPrompt(payload map[string]any, normalizedMessages []any, to
 	}
 
 	return append([]any{map[string]any{"role": "system", "content": toolPrompt}}, messages...)
+}
+
+// collectRefFileIDsFromRequest extracts file IDs from the request's ref_file_ids
+// field (populated by preprocessClaudeImageInputs) and from any input_image blocks
+// in the messages.
+func collectRefFileIDsFromRequest(req map[string]any) []string {
+	if len(req) == 0 {
+		return nil
+	}
+	seen := map[string]struct{}{}
+	var out []string
+	addID := func(id string) {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			return
+		}
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	// Collect from ref_file_ids set by preprocessClaudeImageInputs
+	if raw, ok := req["ref_file_ids"].([]any); ok {
+		for _, v := range raw {
+			if id := strings.TrimSpace(fmt.Sprintf("%v", v)); id != "" {
+				addID(id)
+			}
+		}
+	}
+	// Collect from input_image blocks in messages
+	if messages, ok := req["messages"].([]any); ok {
+		collectFileIDsFromMessages(messages, addID)
+	}
+	return out
+}
+
+func collectFileIDsFromMessages(messages []any, addID func(string)) {
+	for _, item := range messages {
+		msg, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		content, ok := msg["content"].([]any)
+		if !ok {
+			continue
+		}
+		for _, block := range content {
+			b, ok := block.(map[string]any)
+			if !ok {
+				continue
+			}
+			blockType := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", b["type"])))
+			if blockType == "input_image" {
+				if fileID := strings.TrimSpace(fmt.Sprintf("%v", b["file_id"])); fileID != "" {
+					addID(fileID)
+				}
+			}
+		}
+	}
 }
 
 func mergeSystemPrompt(base, extra string) string {
