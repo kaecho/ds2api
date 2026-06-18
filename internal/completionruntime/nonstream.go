@@ -121,7 +121,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, switchErr
 				}
 				if switched.Response != nil {
-					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after 429", "surface", stdReq.Surface, "stream", false, "account", a.AccountID)
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after empty output", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", outErr.Status)
 					sessionID = switched.SessionID
 					payload = switched.Payload
 					pow = switched.Pow
@@ -161,7 +161,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
 				}
 				if switched.Response != nil {
-					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after 429", "surface", stdReq.Surface, "stream", false, "account", a.AccountID)
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after empty output", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", outErr.Status)
 					sessionID = switched.SessionID
 					payload = switched.Payload
 					pow = switched.Pow
@@ -194,7 +194,11 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 }
 
 func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr *assistantturn.OutputError, retryEnabled bool, attempted *bool) bool {
-	if outErr == nil || outErr.Status != http.StatusTooManyRequests {
+	if outErr == nil {
+		return false
+	}
+	// Allow account switch for rate-limit (429) and empty-output (503 upstream_unavailable).
+	if outErr.Status != http.StatusTooManyRequests && outErr.Status != http.StatusServiceUnavailable {
 		return false
 	}
 	if !retryEnabled || attempted == nil || *attempted {

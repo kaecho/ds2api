@@ -76,7 +76,7 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 		}
 
 		if attempts >= retryMax {
-			if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusTooManyRequests}, opts.RetryEnabled, &accountSwitchAttempted) {
+			if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusServiceUnavailable}, opts.RetryEnabled, &accountSwitchAttempted) {
 				switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
 				if switchErr != nil {
 					if hooks.OnRetryFailure != nil {
