@@ -106,6 +106,10 @@ func pumpAutoContinue(ctx context.Context, pw *io.PipeWriter, initial io.ReadClo
 			return
 		}
 		if state.shouldContinue() && rounds < maxRounds {
+			if ctx.Err() != nil {
+				config.Logger.Debug("[auto_continue] context canceled, stopping continue loop", "session_id", state.sessionID, "round", rounds)
+				return
+			}
 			rounds++
 			config.Logger.Info("[auto_continue] continuing", "round", rounds, "session_id", state.sessionID, "message_id", state.responseMessageID, "status", state.lastStatus)
 			nextResp, err := openContinue(ctx, state.sessionID, state.responseMessageID)

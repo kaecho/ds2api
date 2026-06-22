@@ -75,6 +75,14 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 			return
 		}
 
+		if ctx.Err() != nil {
+			config.Logger.Debug("[completion_runtime_empty_retry] context canceled, skipping account switch retry", "surface", surface, "stream", opts.Stream)
+			if hooks.Finalize != nil {
+				hooks.Finalize(attempts)
+			}
+			return
+		}
+
 		if attempts >= retryMax {
 			if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusServiceUnavailable}, opts.RetryEnabled, &accountSwitchAttempted) {
 				switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
@@ -98,6 +106,14 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 					continue
 				}
 			}
+			if hooks.Finalize != nil {
+				hooks.Finalize(attempts)
+			}
+			return
+		}
+
+		if ctx.Err() != nil {
+			config.Logger.Debug("[completion_runtime_empty_retry] context canceled, skipping retry", "surface", surface, "stream", opts.Stream, "retry_attempt", attempts+1)
 			if hooks.Finalize != nil {
 				hooks.Finalize(attempts)
 			}
