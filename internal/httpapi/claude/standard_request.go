@@ -28,8 +28,16 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 	payload := cloneMap(req)
 	payload["messages"] = normalizedMessages
 	toolsRequested, _ := req["tools"].([]any)
-	payload["messages"] = injectClaudeToolPrompt(payload, normalizedMessages, toolsRequested)
 
+	// Capture the original system text before tool injection so that
+	// response-history can record the user-provided system prompt without
+	// the tool descriptions (those are handled separately by CurrentInputFile).
+	standardMessages := normalizedMessages
+	if systemText, ok := payload["system"].(string); ok && strings.TrimSpace(systemText) != "" {
+		standardMessages = append([]any{map[string]any{"role": "system", "content": systemText}}, normalizedMessages...)
+	}
+
+	payload["messages"] = injectClaudeToolPrompt(payload, normalizedMessages, toolsRequested)
 	dsPayload := convertClaudeToDeepSeek(payload, store)
 	dsModel, _ := dsPayload["model"].(string)
 	defaultThinkingEnabled, searchEnabled, ok := config.GetModelConfig(dsModel)
@@ -53,7 +61,7 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 			RequestedModel:  strings.TrimSpace(model),
 			ResolvedModel:   dsModel,
 			ResponseModel:   strings.TrimSpace(model),
-			Messages:        normalizedMessages,
+			Messages:        standardMessages,
 			PromptTokenText: finalPrompt,
 			ToolsRaw:        toolsRequested,
 			FinalPrompt:     finalPrompt,
