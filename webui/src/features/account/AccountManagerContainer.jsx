@@ -53,6 +53,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
         loading,
         testing,
         testingAll,
+        checkingAll,
         batchProgress,
         sessionCounts,
         deletingSessions,
@@ -64,6 +65,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
         deleteAccount,
         testAccount,
         testAllAccounts,
+        checkAllAccountStatus,
         deleteAllSessions,
         updateAccountProxy,
     } = useAccountActions({
@@ -119,6 +121,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
                 loadingAccounts={loadingAccounts}
                 testing={testing}
                 testingAll={testingAll}
+                checkingAll={checkingAll}
                 batchProgress={batchProgress}
                 sessionCounts={sessionCounts}
                 deletingSessions={deletingSessions}
@@ -130,6 +133,7 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
                 resolveAccountIdentifier={resolveAccountIdentifier}
                 proxies={config?.proxies || []}
                 onTestAll={testAllAccounts}
+                onCheckStatus={checkAllAccountStatus}
                 onShowAddAccount={openAddAccount}
                 onEditAccount={openEditAccount}
                 onTestAccount={testAccount}

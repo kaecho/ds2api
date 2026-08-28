@@ -4,6 +4,9 @@ package config
 func (s *Store) rebuildIndexes() {
 	prevStatus := s.accTest
 	prevBanned := s.accBanned
+	prevMute := s.accMuteUntil
+	prevUses := s.accDailyUses
+	prevDay := s.accDailyDate
 	s.keyMap = make(map[string]struct{}, len(s.cfg.Keys))
 	for _, k := range s.cfg.Keys {
 		s.keyMap[k] = struct{}{}
@@ -11,6 +14,9 @@ func (s *Store) rebuildIndexes() {
 	s.accMap = make(map[string]int, len(s.cfg.Accounts))
 	s.accTest = make(map[string]string, len(s.cfg.Accounts))
 	s.accBanned = make(map[string]bool, len(s.cfg.Accounts))
+	s.accMuteUntil = make(map[string]int64, len(s.cfg.Accounts))
+	s.accDailyDate = prevDay
+	s.accDailyUses = make(map[string]int, len(s.cfg.Accounts))
 	for i, acc := range s.cfg.Accounts {
 		id := acc.Identifier()
 		if id != "" {
@@ -20,6 +26,12 @@ func (s *Store) rebuildIndexes() {
 			}
 			if banned, ok := prevBanned[id]; ok && banned {
 				s.accBanned[id] = true
+			}
+			if until, ok := prevMute[id]; ok && until != 0 {
+				s.accMuteUntil[id] = until
+			}
+			if n, ok := prevUses[id]; ok && n > 0 {
+				s.accDailyUses[id] = n
 			}
 		}
 	}

@@ -119,6 +119,12 @@ func (h *Handler) configImport(w http.ResponseWriter, r *http.Request) {
 			if incoming.Runtime.TokenRefreshIntervalHours > 0 {
 				next.Runtime.TokenRefreshIntervalHours = incoming.Runtime.TokenRefreshIntervalHours
 			}
+			if incoming.Runtime.AccountSchedule != "" {
+				next.Runtime.AccountSchedule = config.NormalizeAccountSchedule(incoming.Runtime.AccountSchedule)
+			}
+			if incoming.Runtime.AccountDailyLimit != nil {
+				next.Runtime.AccountDailyLimit = incoming.Runtime.AccountDailyLimit
+			}
 		}
 
 		normalizeSettingsConfig(&next)

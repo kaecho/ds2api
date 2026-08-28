@@ -53,6 +53,7 @@ func NewApp() (*App, error) {
 	applyPromptConfigFromStore(store)
 	applyClientConfigFromStore(store)
 	pool := account.NewPool(store)
+	pool.StartMuteExpiryLoop(context.Background())
 	var dsClient *dsclient.Client
 	resolver := auth.NewResolver(store, pool, func(ctx context.Context, acc config.Account) (string, error) {
 		return dsClient.Login(ctx, acc)

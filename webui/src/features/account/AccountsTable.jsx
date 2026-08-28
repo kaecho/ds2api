@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX, Activity } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AccountsTable({
@@ -8,6 +8,7 @@ export default function AccountsTable({
     loadingAccounts,
     testing,
     testingAll,
+    checkingAll,
     batchProgress,
     sessionCounts,
     deletingSessions,
@@ -19,6 +20,7 @@ export default function AccountsTable({
     resolveAccountIdentifier,
     proxies,
     onTestAll,
+    onCheckStatus,
     onShowAddAccount,
     onEditAccount,
     onTestAccount,
@@ -56,8 +58,16 @@ export default function AccountsTable({
                         className="px-3 py-1.5 text-sm bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                     />
                     <button
+                        onClick={onCheckStatus}
+                        disabled={checkingAll || testingAll || totalAccounts === 0}
+                        className="flex items-center px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border disabled:opacity-50"
+                    >
+                        {checkingAll ? <span className="animate-spin mr-2">⟳</span> : <Activity className="w-3 h-3 mr-2" />}
+                        {t('accountManager.checkStatus')}
+                    </button>
+                    <button
                         onClick={onTestAll}
-                        disabled={testingAll || totalAccounts === 0}
+                        disabled={testingAll || checkingAll || totalAccounts === 0}
                         className="flex items-center px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border disabled:opacity-50"
                     >
                         {testingAll ? <span className="animate-spin mr-2">⟳</span> : <Play className="w-3 h-3 mr-2" />}
@@ -72,6 +82,15 @@ export default function AccountsTable({
                     </button>
                 </div>
             </div>
+
+            {checkingAll && (
+                <div className="p-4 border-b border-border bg-muted/30">
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{t('accountManager.checkingAllAccounts')}</span>
+                        <span className="animate-spin">⟳</span>
+                    </div>
+                </div>
+            )}
 
             {testingAll && batchProgress.total > 0 && (
                 <div className="p-4 border-b border-border bg-muted/30">
@@ -108,13 +127,28 @@ export default function AccountsTable({
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
                         const runtimeUnknown = envBacked && !acc.test_status
-                        const isActive = acc.test_status === 'ok' || acc.has_token
+                        const isBanned = acc.banned || acc.health === 'banned'
+                        const isMuted = acc.muted || acc.health === 'muted'
+                        const isActive = !isBanned && !isMuted && (acc.test_status === 'ok' || acc.has_token)
+                        const muteUntilLabel = acc.mute_until ? new Date(acc.mute_until * 1000).toLocaleString() : ''
+                        const statusLabel = isBanned
+                            ? t('accountManager.healthBanned')
+                            : isMuted
+                                ? (muteUntilLabel ? t('accountManager.mutedUntil', { time: muteUntilLabel }) : t('accountManager.healthMuted'))
+                                : acc.test_status === 'failed'
+                                    ? t('accountManager.testStatusFailed')
+                                    : isActive
+                                        ? t('accountManager.sessionActive')
+                                        : runtimeUnknown
+                                            ? t('accountManager.runtimeStatusUnknown')
+                                            : t('accountManager.reauthRequired')
                         return (
                             <div key={i} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className={clsx(
                                         "w-2 h-2 rounded-full shrink-0",
-                                        acc.banned ? "bg-red-700 shadow-[0_0_8px_rgba(185,28,28,0.5)]" :
+                                        isBanned ? "bg-red-700 shadow-[0_0_8px_rgba(185,28,28,0.5)]" :
+                                        isMuted ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" :
                                         acc.test_status === 'failed' ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
                                         isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
                                         runtimeUnknown ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-amber-500"
@@ -135,15 +169,20 @@ export default function AccountsTable({
                                             <div className="text-xs text-muted-foreground truncate mt-0.5">{acc.remark}</div>
                                         )}
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                            <span>{acc.banned ? '⚠ 账号已封禁' : acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
-                                            {acc.token_preview && !acc.banned && (
+                                            <span>{statusLabel}</span>
+                                            {acc.token_preview && !isBanned && (
                                                 <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">
                                                     {acc.token_preview}
                                                 </span>
                                             )}
-                                            {acc.banned && (
+                                            {isBanned && (
                                                 <span className="font-mono bg-red-700/20 text-red-500 px-1.5 py-0.5 rounded text-[10px] font-semibold">
-                                                    BANNED
+                                                    {t('accountManager.bannedBadge')}
+                                                </span>
+                                            )}
+                                            {isMuted && !isBanned && (
+                                                <span className="font-mono bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                                                    {t('accountManager.mutedBadge')}
                                                 </span>
                                             )}
                                             {sessionCounts && sessionCounts[id] !== undefined && (

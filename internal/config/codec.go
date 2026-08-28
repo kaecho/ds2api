@@ -32,7 +32,7 @@ func (c Config) MarshalJSON() ([]byte, error) {
 	if strings.TrimSpace(c.Admin.PasswordHash) != "" || c.Admin.JWTExpireHours > 0 || c.Admin.JWTValidAfterUnix > 0 {
 		m["admin"] = c.Admin
 	}
-	if c.Runtime.AccountMaxInflight > 0 || c.Runtime.AccountMaxQueue > 0 || c.Runtime.GlobalMaxInflight > 0 || c.Runtime.TokenRefreshIntervalHours > 0 {
+	if c.Runtime.AccountMaxInflight > 0 || c.Runtime.AccountMaxQueue > 0 || c.Runtime.GlobalMaxInflight > 0 || c.Runtime.TokenRefreshIntervalHours > 0 || strings.TrimSpace(c.Runtime.AccountSchedule) != "" || c.Runtime.AccountDailyLimit != nil {
 		m["runtime"] = c.Runtime
 	}
 	if c.Responses.StoreTTLSeconds > 0 {
@@ -187,7 +187,7 @@ func (c Config) Clone() Config {
 		Proxies:      slices.Clone(c.Proxies),
 		ModelAliases: cloneStringMap(c.ModelAliases),
 		Admin:        c.Admin,
-		Runtime:      c.Runtime,
+		Runtime:      cloneRuntimeConfig(c.Runtime),
 		Responses:    c.Responses,
 		Embeddings:   c.Embeddings,
 		AutoDelete:   c.AutoDelete,
@@ -260,6 +260,21 @@ func cloneStringMap(in map[string]string) map[string]string {
 		out[k] = v
 	}
 	return out
+}
+
+func cloneRuntimeConfig(in RuntimeConfig) RuntimeConfig {
+	out := in
+	out.AutoCleanBanned = cloneBoolPtr(in.AutoCleanBanned)
+	out.AccountDailyLimit = cloneIntPtr(in.AccountDailyLimit)
+	return out
+}
+
+func cloneIntPtr(in *int) *int {
+	if in == nil {
+		return nil
+	}
+	v := *in
+	return &v
 }
 
 func cloneBoolPtr(in *bool) *bool {

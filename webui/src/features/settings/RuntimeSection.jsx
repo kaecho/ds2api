@@ -1,8 +1,40 @@
 export default function RuntimeSection({ t, form, setForm }) {
+    const schedule = form.runtime.account_schedule || 'round_robin'
     return (
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">
             <h3 className="font-semibold">{t('settings.runtimeTitle')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <label className="text-sm space-y-2 md:col-span-2">
+                    <span className="text-muted-foreground">{t('settings.accountSchedule')}</span>
+                    <select
+                        value={schedule}
+                        onChange={(e) => setForm((prev) => ({
+                            ...prev,
+                            runtime: { ...prev.runtime, account_schedule: e.target.value },
+                        }))}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2"
+                    >
+                        <option value="round_robin">{t('settings.scheduleRoundRobin')}</option>
+                        <option value="fill">{t('settings.scheduleFill')}</option>
+                        <option value="least_used">{t('settings.scheduleLeastUsed')}</option>
+                        <option value="random">{t('settings.scheduleRandom')}</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">{t(`settings.scheduleHelp.${schedule}`)}</p>
+                </label>
+                <label className="text-sm space-y-2">
+                    <span className="text-muted-foreground">{t('settings.accountDailyLimit')}</span>
+                    <input
+                        type="number"
+                        min={0}
+                        value={form.runtime.account_daily_limit}
+                        onChange={(e) => setForm((prev) => ({
+                            ...prev,
+                            runtime: { ...prev.runtime, account_daily_limit: Number(e.target.value || 0) },
+                        }))}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('settings.accountDailyLimitHelp')}</p>
+                </label>
                 <label className="text-sm space-y-2">
                     <span className="text-muted-foreground">{t('settings.accountMaxInflight')}</span>
                     <input

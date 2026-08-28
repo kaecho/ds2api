@@ -22,6 +22,10 @@ type ConfigStore interface {
 	AccountBannedStatus(identifier string) bool
 	BannedAccountIdentifiers() []string
 	RemoveBannedAccounts() ([]string, error)
+	UpdateAccountMuteUntil(identifier string, muteUntil int64)
+	AccountMuteUntil(identifier string) int64
+	AccountMuted(identifier string) bool
+	ClearExpiredMutes(now int64) []string
 	Update(mutator func(*config.Config) error) error
 	ExportJSONAndBase64() (string, string, error)
 	IsEnvBacked() bool
@@ -37,6 +41,8 @@ type ConfigStore interface {
 	RuntimeGlobalMaxInflight(defaultSize int) int
 	RuntimeTokenRefreshIntervalHours() int
 	RuntimeAutoCleanBanned() bool
+	RuntimeAccountSchedule() string
+	RuntimeAccountDailyLimit() int
 	AutoDeleteMode() string
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
@@ -62,6 +68,8 @@ type PoolController interface {
 	Reset()
 	Status() map[string]any
 	ApplyRuntimeLimits(maxInflightPerAccount, maxQueueSize, globalMaxInflight int)
+	WakeWaiters()
+	ApplySchedule(schedule string, dailyLimit int)
 }
 
 type OpenAIChatCaller interface {
@@ -75,6 +83,7 @@ type DeepSeekCaller interface {
 	CallCompletion(ctx context.Context, a *auth.RequestAuth, payload map[string]any, powResp string, maxAttempts int) (*http.Response, error)
 	GetSessionCountForToken(ctx context.Context, token string) (*dsclient.SessionStats, error)
 	DeleteAllSessionsForToken(ctx context.Context, token string) error
+	GetCurrentUser(ctx context.Context, token string) (*dsclient.CurrentUser, error)
 }
 
 var _ ConfigStore = (*config.Store)(nil)

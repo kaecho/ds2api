@@ -155,6 +155,7 @@ Gemini 兼容客户端还可以使用 `x-goog-api-key`、`?key=` 或 `?api_key=`
 | GET | `/admin/queue/status` | Admin | 账号队列状态 |
 | POST | `/admin/accounts/test` | Admin | 测试单个账号 |
 | POST | `/admin/accounts/test-all` | Admin | 测试全部账号 |
+| POST | `/admin/accounts/check-status` | Admin | 检测账号健康/短暂封禁/永久封禁 |
 | POST | `/admin/accounts/sessions/delete-all` | Admin | 删除某账号的全部会话 |
 | POST | `/admin/import` | Admin | 批量导入 keys/accounts |
 | POST | `/admin/test` | Admin | 测试当前 API 可用性 |
@@ -771,7 +772,7 @@ data: {"type":"message_stop"}
 
 - `success`
 - `admin`（`has_password_hash`、`jwt_expire_hours`、`jwt_valid_after_unix`、`default_password_warning`）
-- `runtime`（`account_max_inflight`、`account_max_queue`、`global_max_inflight`、`token_refresh_interval_hours`）
+- `runtime`（`account_max_inflight`、`account_max_queue`、`global_max_inflight`、`token_refresh_interval_hours`、`account_schedule`、`account_daily_limit`）
 - `responses` / `embeddings`
 - `auto_delete`（`mode`：`none` / `single` / `all`；旧配置 `sessions=true` 仍按 `all` 处理）
 - `current_input_file`（`enabled` 默认返回 `true`、`min_chars`）
@@ -780,12 +781,14 @@ data: {"type":"message_stop"}
 - `env_backed`、`needs_vercel_sync`
 - `toolcall` 策略已固定为 `feature_match + high`，不再通过 settings 返回或修改
 
+`runtime.account_schedule` 为 `round_robin`（默认，每次请求换号）、`fill`（粘性填充，打满 `account_daily_limit` 再换号）、`least_used`（优先今天用得少的号）、`random`（在可接号里随机）。`account_daily_limit` 为 0 表示不限制；所有策略都会跳过已达上限的号。计数在内存中按自然日重置，进程重启会清零。
+
 ### `PUT /admin/settings`
 
 热更新运行时设置。支持更新：
 
 - `admin.jwt_expire_hours`
-- `runtime.account_max_inflight` / `runtime.account_max_queue` / `runtime.global_max_inflight` / `runtime.token_refresh_interval_hours`
+- `runtime.account_max_inflight` / `runtime.account_max_queue` / `runtime.global_max_inflight` / `runtime.token_refresh_interval_hours` / `runtime.account_schedule` / `runtime.account_daily_limit`
 - `responses.store_ttl_seconds`
 - `embeddings.provider`
 - `auto_delete.mode`
@@ -892,7 +895,11 @@ data: {"type":"message_stop"}
       "has_password": true,
       "has_token": true,
       "token_preview": "abc...",
-      "test_status": "ok"
+      "test_status": "ok",
+      "banned": false,
+      "muted": false,
+      "mute_until": 0,
+      "health": "healthy"
     }
   ],
   "total": 25,
@@ -901,6 +908,9 @@ data: {"type":"message_stop"}
   "total_pages": 3
 }
 ```
+
+`health` 为 `healthy` / `muted` / `banned` / `failed` 之一。`muted=true` 时账号会从调度池暂停，直到 `mute_until`（unix 秒）到期或再次检测为健康。
+
 
 ### `POST /admin/accounts`
 
@@ -1005,6 +1015,37 @@ data: {"type":"message_stop"}
 ```
 
 内部并发上限当前固定为 5。
+
+### `POST /admin/accounts/check-status`
+
+登录每个账号并请求 DeepSeek `GET /api/v0/users/current`，按 `chat.is_muted` / `chat.mute_until` 与登录封禁错误分类：
+
+- `healthy`：可调度
+- `muted`：短暂封禁，自动暂停，冷却结束后重新启用
+- `banned`：永久封禁（登录 `user_is_banned` 等）
+- `failed`：登录或状态查询失败
+
+内部并发上限当前固定为 5。无需请求体。
+
+```json
+{
+  "total": 5,
+  "healthy": 3,
+  "muted": 1,
+  "banned": 1,
+  "failed": 0,
+  "results": [
+    {
+      "account": "user@example.com",
+      "success": true,
+      "health": "muted",
+      "mute_until": 1788144318,
+      "message": "短暂封禁，已暂停调度，冷却至 2026-08-31 12:05:18",
+      "response_time": 420
+    }
+  ]
+}
+```
 
 ### `POST /admin/accounts/sessions/delete-all`
 

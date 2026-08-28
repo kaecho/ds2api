@@ -96,6 +96,14 @@ func ValidateRuntimeConfig(runtime RuntimeConfig) error {
 	if err := ValidateIntRange("runtime.token_refresh_interval_hours", runtime.TokenRefreshIntervalHours, 1, 720, false); err != nil {
 		return err
 	}
+	if runtime.AccountDailyLimit != nil {
+		if err := ValidateIntRange("runtime.account_daily_limit", *runtime.AccountDailyLimit, 0, 1000000, true); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(runtime.AccountSchedule) != "" && NormalizeAccountSchedule(runtime.AccountSchedule) == "" {
+		return fmt.Errorf("runtime.account_schedule must be one of round_robin, fill, least_used, random")
+	}
 	if runtime.AccountMaxInflight > 0 && runtime.GlobalMaxInflight > 0 && runtime.GlobalMaxInflight < runtime.AccountMaxInflight {
 		return fmt.Errorf("runtime.global_max_inflight must be >= runtime.account_max_inflight")
 	}

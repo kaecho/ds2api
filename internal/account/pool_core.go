@@ -17,6 +17,9 @@ type Pool struct {
 	recommendedConcurrency int
 	maxQueueSize           int
 	globalMaxInflight      int
+	schedule               string
+	dailyLimit             int
+	fillCursor             string
 }
 
 func NewPool(store *config.Store) *Pool {
@@ -58,9 +61,13 @@ func (p *Pool) Reset() {
 	recommended := defaultRecommendedConcurrency(len(ids), p.maxInflightPerAccount)
 	queueLimit := maxQueueFromEnv(recommended)
 	globalLimit := recommended
+	schedule := config.ScheduleRoundRobin
+	dailyLimit := 0
 	if p.store != nil {
 		queueLimit = p.store.RuntimeAccountMaxQueue(recommended)
 		globalLimit = p.store.RuntimeGlobalMaxInflight(recommended)
+		schedule = p.store.RuntimeAccountSchedule()
+		dailyLimit = p.store.RuntimeAccountDailyLimit()
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -70,6 +77,20 @@ func (p *Pool) Reset() {
 	p.recommendedConcurrency = recommended
 	p.maxQueueSize = queueLimit
 	p.globalMaxInflight = globalLimit
+	p.schedule = schedule
+	p.dailyLimit = dailyLimit
+	if p.fillCursor != "" {
+		found := false
+		for _, id := range ids {
+			if id == p.fillCursor {
+				found = true
+				break
+			}
+		}
+		if !found {
+			p.fillCursor = ""
+		}
+	}
 	config.Logger.Info(
 		"[init_account_queue] initialized",
 		"total", len(ids),
@@ -77,6 +98,8 @@ func (p *Pool) Reset() {
 		"global_max_inflight", p.globalMaxInflight,
 		"recommended_concurrency", p.recommendedConcurrency,
 		"max_queue_size", p.maxQueueSize,
+		"schedule", p.schedule,
+		"account_daily_limit", p.dailyLimit,
 	)
 }
 
@@ -106,6 +129,9 @@ func (p *Pool) Status() map[string]any {
 	inUseAccounts := make([]string, 0, len(p.inUse))
 	inUseSlots := 0
 	for _, id := range p.queue {
+		if p.accountUnavailableLocked(id) || p.accountCappedLocked(id) {
+			continue
+		}
 		if p.inUse[id] < p.maxInflightPerAccount {
 			available = append(available, id)
 		}
@@ -128,5 +154,8 @@ func (p *Pool) Status() map[string]any {
 		"recommended_concurrency":  p.recommendedConcurrency,
 		"waiting":                  len(p.waiters),
 		"max_queue_size":           p.maxQueueSize,
+		"schedule":                 p.schedule,
+		"account_daily_limit":      p.dailyLimit,
+		"fill_account":             p.fillCursor,
 	}
 }

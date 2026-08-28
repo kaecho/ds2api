@@ -111,6 +111,9 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 		"config_warning":  "",
 	}
 	defer func() {
+		if health, _ := result["health"].(string); health == "banned" || health == "muted" {
+			return
+		}
 		status := "failed"
 		if ok, _ := result["success"].(bool); ok {
 			status = "ok"
@@ -120,8 +123,8 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 	token, err := h.DS.Login(ctx, acc)
 	if err != nil {
 		if dsclient.IsBannedError(err) {
-			h.Store.UpdateAccountBannedStatus(identifier, true)
-			_ = h.Store.UpdateAccountTestStatus(identifier, "banned")
+			h.markAccountBanned(identifier)
+			result["health"] = "banned"
 			result["message"] = "登录失败: 账号已被封禁 (" + err.Error() + ")"
 			return result
 		}
@@ -133,6 +136,20 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 	}
 	authCtx := &authn.RequestAuth{UseConfigToken: false, DeepSeekToken: token, AccountID: identifier, Account: acc}
 	proxyCtx := authn.WithAuth(ctx, authCtx)
+	if health, until, msg, stop := h.inspectLoggedInAccount(proxyCtx, identifier, token); stop {
+		result["health"] = health
+		if until > 0 {
+			result["mute_until"] = until
+		}
+		result["message"] = msg
+		if warning, _ := result["config_warning"].(string); strings.TrimSpace(warning) != "" {
+			result["message"] = result["message"].(string) + "；" + warning
+		}
+		result["response_time"] = int(time.Since(start).Milliseconds())
+		return result
+	} else if health == "healthy" {
+		result["health"] = "healthy"
+	}
 	sessionID, err := h.DS.CreateSession(proxyCtx, authCtx, 1)
 	if err != nil {
 		newToken, loginErr := h.DS.Login(proxyCtx, acc)

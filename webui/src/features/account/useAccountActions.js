@@ -13,6 +13,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     const [loading, setLoading] = useState(false)
     const [testing, setTesting] = useState({})
     const [testingAll, setTestingAll] = useState(false)
+    const [checkingAll, setCheckingAll] = useState(false)
     const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, results: [] })
     const [sessionCounts, setSessionCounts] = useState({})
     const [deletingSessions, setDeletingSessions] = useState({})
@@ -282,6 +283,38 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         setTestingAll(false)
     }
 
+    const checkAllAccountStatus = async () => {
+        if (!confirm(t('accountManager.checkStatusConfirm'))) return
+        const allAccounts = config.accounts || []
+        if (allAccounts.length === 0) return
+
+        setCheckingAll(true)
+        try {
+            const res = await apiFetch('/admin/accounts/check-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                onMessage('error', data.detail || t('messages.requestFailed'))
+                return
+            }
+            onMessage('success', t('accountManager.checkStatusCompleted', {
+                healthy: data.healthy || 0,
+                muted: data.muted || 0,
+                banned: data.banned || 0,
+                failed: data.failed || 0,
+                total: data.total || allAccounts.length,
+            }))
+            fetchAccounts()
+            onRefresh()
+        } catch (e) {
+            onMessage('error', t('accountManager.checkStatusFailed', { error: e.message }))
+        } finally {
+            setCheckingAll(false)
+        }
+    }
+
     const deleteAllSessions = async (identifier) => {
         const accountID = String(identifier || '').trim()
         if (!accountID) {
@@ -369,6 +402,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         loading,
         testing,
         testingAll,
+        checkingAll,
         batchProgress,
         sessionCounts,
         deletingSessions,
@@ -380,6 +414,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         deleteAccount,
         testAccount,
         testAllAccounts,
+        checkAllAccountStatus,
         deleteAllSessions,
         updateAccountProxy,
     }

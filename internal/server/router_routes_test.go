@@ -82,6 +82,7 @@ func TestAPIRoutesRemainRegistered(t *testing.T) {
 		"GET /admin/queue/status",
 		"POST /admin/accounts/test",
 		"POST /admin/accounts/test-all",
+		"POST /admin/accounts/check-status",
 		"POST /admin/accounts/sessions/delete-all",
 		"POST /admin/import",
 		"POST /admin/test",

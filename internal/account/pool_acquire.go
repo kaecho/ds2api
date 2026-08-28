@@ -64,20 +64,42 @@ func (p *Pool) acquireLocked(target string, exclude map[string]bool) (config.Acc
 }
 
 func (p *Pool) tryAcquire(exclude map[string]bool) (config.Account, bool) {
-	for i := 0; i < len(p.queue); i++ {
+	switch p.schedule {
+	case config.ScheduleFill:
+		return p.tryAcquireFill(exclude)
+	case config.ScheduleLeastUsed:
+		return p.tryAcquireLeastUsed(exclude)
+	case config.ScheduleRandom:
+		return p.tryAcquireRandom(exclude)
+	default:
+		return p.tryAcquireRoundRobin(exclude)
+	}
+}
+
+func (p *Pool) tryAcquireRoundRobin(exclude map[string]bool) (config.Account, bool) {
+	for i := range p.queue {
 		id := p.queue[i]
 		if exclude[id] || !p.canAcquireIDLocked(id) {
 			continue
 		}
-		acc, ok := p.store.FindAccount(id)
-		if !ok {
-			continue
-		}
-		p.inUse[id]++
-		p.bumpQueue(id)
-		return acc, true
+		return p.takeLocked(id)
 	}
 	return config.Account{}, false
+}
+
+func (p *Pool) takeLocked(accountID string) (config.Account, bool) {
+	acc, ok := p.store.FindAccount(accountID)
+	if !ok {
+		return config.Account{}, false
+	}
+	p.inUse[accountID]++
+	if p.schedule == config.ScheduleRoundRobin || p.schedule == "" {
+		p.bumpQueue(accountID)
+	}
+	if p.store != nil {
+		p.store.NoteAccountUse(accountID)
+	}
+	return acc, true
 }
 
 func (p *Pool) bumpQueue(accountID string) {

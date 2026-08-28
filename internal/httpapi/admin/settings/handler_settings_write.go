@@ -71,6 +71,12 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 			if runtimeCfg.AutoCleanBanned != nil {
 				c.Runtime.AutoCleanBanned = runtimeCfg.AutoCleanBanned
 			}
+			if runtimeCfg.AccountSchedule != "" {
+				c.Runtime.AccountSchedule = runtimeCfg.AccountSchedule
+			}
+			if runtimeCfg.AccountDailyLimit != nil {
+				c.Runtime.AccountDailyLimit = runtimeCfg.AccountDailyLimit
+			}
 		}
 		if responsesCfg != nil && responsesCfg.StoreTTLSeconds > 0 {
 			c.Responses.StoreTTLSeconds = responsesCfg.StoreTTLSeconds

@@ -81,6 +81,21 @@ func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *confi
 			b := boolFrom(v)
 			cfg.AutoCleanBanned = &b
 		}
+		if v, exists := raw["account_schedule"]; exists {
+			s, _ := v.(string)
+			normalized := config.NormalizeAccountSchedule(s)
+			if strings.TrimSpace(s) != "" && normalized == "" {
+				return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("runtime.account_schedule must be one of round_robin, fill, least_used, random")
+			}
+			cfg.AccountSchedule = normalized
+		}
+		if v, exists := raw["account_daily_limit"]; exists {
+			n := intFrom(v)
+			if err := config.ValidateIntRange("runtime.account_daily_limit", n, 0, 1000000, true); err != nil {
+				return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, err
+			}
+			cfg.AccountDailyLimit = &n
+		}
 		if cfg.AccountMaxInflight > 0 && cfg.GlobalMaxInflight > 0 && cfg.GlobalMaxInflight < cfg.AccountMaxInflight {
 			return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("runtime.global_max_inflight must be >= runtime.account_max_inflight")
 		}

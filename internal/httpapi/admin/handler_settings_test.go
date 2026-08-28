@@ -474,6 +474,58 @@ func TestUpdateSettingsHotReloadTokenRefreshInterval(t *testing.T) {
 	}
 }
 
+func TestUpdateSettingsHotReloadAccountSchedule(t *testing.T) {
+	h := newAdminTestHandler(t, `{
+		"keys":["k1"],
+		"accounts":[{"email":"u@example.com","password":"p"}]
+	}`)
+	payload := map[string]any{
+		"runtime": map[string]any{
+			"account_schedule":    "fill",
+			"account_daily_limit": 80,
+		},
+	}
+	b, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPut, "/admin/settings", bytes.NewReader(b))
+	rec := httptest.NewRecorder()
+	h.updateSettings(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := h.Store.RuntimeAccountSchedule(); got != "fill" {
+		t.Fatalf("schedule=%q", got)
+	}
+	if got := h.Store.RuntimeAccountDailyLimit(); got != 80 {
+		t.Fatalf("daily_limit=%d", got)
+	}
+	status := h.Pool.Status()
+	if got, _ := status["schedule"].(string); got != "fill" {
+		t.Fatalf("pool schedule=%#v", status["schedule"])
+	}
+}
+
+func TestGetSettingsIncludesAccountSchedule(t *testing.T) {
+	h := newAdminTestHandler(t, `{
+		"keys":["k1"],
+		"runtime":{"account_schedule":"least_used","account_daily_limit":12}
+	}`)
+	req := httptest.NewRequest(http.MethodGet, "/admin/settings", nil)
+	rec := httptest.NewRecorder()
+	h.getSettings(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var body map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &body)
+	runtime, _ := body["runtime"].(map[string]any)
+	if got, _ := runtime["account_schedule"].(string); got != "least_used" {
+		t.Fatalf("account_schedule=%v", runtime["account_schedule"])
+	}
+	if got := intFrom(runtime["account_daily_limit"]); got != 12 {
+		t.Fatalf("account_daily_limit=%v", runtime["account_daily_limit"])
+	}
+}
+
 func TestUpdateConfigPreservesStructuredAPIKeysWhenBothFieldsPresent(t *testing.T) {
 	h := newAdminTestHandler(t, `{
 		"keys":["legacy"],

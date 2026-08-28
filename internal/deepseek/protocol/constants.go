@@ -18,6 +18,7 @@ const (
 	DeepSeekFetchSessionURL      = "https://chat.deepseek.com/api/v0/chat_session/fetch_page"
 	DeepSeekDeleteSessionURL     = "https://chat.deepseek.com/api/v0/chat_session/delete"
 	DeepSeekDeleteAllSessionsURL = "https://chat.deepseek.com/api/v0/chat_session/delete_all"
+	DeepSeekCurrentUserURL       = "https://chat.deepseek.com/api/v0/users/current"
 	DeepSeekCompletionTargetPath = "/api/v0/chat/completion"
 	DeepSeekUploadTargetPath     = "/api/v0/file/upload_file"
 )

@@ -165,7 +165,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
 				}
 				if switched.Response != nil {
-					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after empty output", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", outErr.Status)
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after empty output", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", turn.Error.Status)
 					sessionID = switched.SessionID
 					payload = switched.Payload
 					pow = switched.Pow

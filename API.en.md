@@ -155,6 +155,7 @@ Gemini-compatible clients can also send `x-goog-api-key`, `?key=`, or `?api_key=
 | GET | `/admin/queue/status` | Admin | Account queue status |
 | POST | `/admin/accounts/test` | Admin | Test one account |
 | POST | `/admin/accounts/test-all` | Admin | Test all accounts |
+| POST | `/admin/accounts/check-status` | Admin | Check healthy / muted / permanently banned |
 | POST | `/admin/accounts/sessions/delete-all` | Admin | Delete all sessions for one account |
 | POST | `/admin/import` | Admin | Batch import keys/accounts |
 | POST | `/admin/test` | Admin | Test API through service |
@@ -765,7 +766,7 @@ Reads runtime settings and status, including:
 
 - `success`
 - `admin` (`has_password_hash`, `jwt_expire_hours`, `jwt_valid_after_unix`, `default_password_warning`)
-- `runtime` (`account_max_inflight`, `account_max_queue`, `global_max_inflight`, `token_refresh_interval_hours`)
+- `runtime` (`account_max_inflight`, `account_max_queue`, `global_max_inflight`, `token_refresh_interval_hours`, `account_schedule`, `account_daily_limit`)
 - `responses` / `embeddings`
 - `auto_delete` (`mode`: `none` / `single` / `all`; legacy `sessions=true` is still treated as `all`)
 - `current_input_file` (`enabled` defaults to `true`, plus `min_chars`)
@@ -774,12 +775,14 @@ Reads runtime settings and status, including:
 - `env_backed`, `needs_vercel_sync`
 - `toolcall` policy is fixed to `feature_match + high` and is no longer returned or editable via settings
 
+`runtime.account_schedule` is `round_robin` (default, rotate every request), `fill` (sticky until `account_daily_limit`), `least_used` (prefer today's quietest account), or `random`. `account_daily_limit` 0 means unlimited; every schedule skips accounts that already hit the cap. Counts reset at local midnight in memory and are lost on process restart.
+
 ### `PUT /admin/settings`
 
 Hot-updates runtime settings. Supported fields:
 
 - `admin.jwt_expire_hours`
-- `runtime.account_max_inflight` / `runtime.account_max_queue` / `runtime.global_max_inflight` / `runtime.token_refresh_interval_hours`
+- `runtime.account_max_inflight` / `runtime.account_max_queue` / `runtime.global_max_inflight` / `runtime.token_refresh_interval_hours` / `runtime.account_schedule` / `runtime.account_daily_limit`
 - `responses.store_ttl_seconds`
 - `embeddings.provider`
 - `auto_delete.mode`
@@ -881,7 +884,11 @@ Tests proxy connectivity: provide `proxy_id` to test a saved proxy; omit it to r
       "has_password": true,
       "has_token": true,
       "token_preview": "abc...",
-      "test_status": "ok"
+      "test_status": "ok",
+      "banned": false,
+      "muted": false,
+      "mute_until": 0,
+      "health": "healthy"
     }
   ],
   "total": 25,
@@ -890,6 +897,9 @@ Tests proxy connectivity: provide `proxy_id` to test a saved proxy; omit it to r
   "total_pages": 3
 }
 ```
+
+
+`health` is one of `healthy`, `muted`, `banned`, or `failed`. When `muted` is true, the account is paused in the pool until `mute_until` (unix seconds) or a later check reports healthy.
 
 Returned items also include `test_status`, usually `ok` or `failed`.
 
@@ -996,6 +1006,37 @@ Optional request field: `model`.
 ```
 
 The internal concurrency limit is currently fixed at 5.
+
+### `POST /admin/accounts/check-status`
+
+Logs in each account and calls DeepSeek `GET /api/v0/users/current`. Classification uses `chat.is_muted` / `chat.mute_until` plus login ban errors:
+
+- `healthy`: available for scheduling
+- `muted`: short chat mute; paused until cooldown ends
+- `banned`: permanent ban (login `user_is_banned` and similar)
+- `failed`: login or status lookup failed
+
+Internal concurrency is currently capped at 5. No request body.
+
+```json
+{
+  "total": 5,
+  "healthy": 3,
+  "muted": 1,
+  "banned": 1,
+  "failed": 0,
+  "results": [
+    {
+      "account": "user@example.com",
+      "success": true,
+      "health": "muted",
+      "mute_until": 1788144318,
+      "message": "Temporarily muted; scheduling paused until 2026-08-31 12:05:18",
+      "response_time": 420
+    }
+  ]
+}
+```
 
 ### `POST /admin/accounts/sessions/delete-all`
 

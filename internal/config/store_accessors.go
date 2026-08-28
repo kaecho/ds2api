@@ -141,6 +141,24 @@ func (s *Store) RuntimeTokenRefreshIntervalHours() int {
 	return 6
 }
 
+func (s *Store) RuntimeAccountSchedule() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return NormalizeAccountSchedule(s.cfg.Runtime.AccountSchedule)
+}
+
+func (s *Store) RuntimeAccountDailyLimit() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.cfg.Runtime.AccountDailyLimit == nil {
+		return 0
+	}
+	if *s.cfg.Runtime.AccountDailyLimit < 0 {
+		return 0
+	}
+	return *s.cfg.Runtime.AccountDailyLimit
+}
+
 // RuntimeAutoCleanBanned returns whether banned accounts should be automatically
 // removed from the pool when detected during token refresh.
 func (s *Store) RuntimeAutoCleanBanned() bool {

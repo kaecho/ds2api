@@ -22,12 +22,19 @@ type testingDSMock struct {
 	getPowCalls                int
 	callCompletionCalls        int
 	deleteAllSessionsCalls     int
+	getCurrentUserCalls        int
 	deleteAllSessionsError     error
 	deleteAllSessionsErrorOnce bool
+	loginErr                   error
+	currentUser                *dsclient.CurrentUser
+	currentUserErr             error
 }
 
 func (m *testingDSMock) Login(_ context.Context, _ config.Account) (string, error) {
 	m.loginCalls++
+	if m.loginErr != nil {
+		return "", m.loginErr
+	}
 	return "new-token", nil
 }
 
@@ -60,6 +67,17 @@ func (m *testingDSMock) DeleteAllSessionsForToken(_ context.Context, _ string) e
 
 func (m *testingDSMock) GetSessionCountForToken(_ context.Context, _ string) (*dsclient.SessionStats, error) {
 	return &dsclient.SessionStats{Success: true}, nil
+}
+
+func (m *testingDSMock) GetCurrentUser(_ context.Context, _ string) (*dsclient.CurrentUser, error) {
+	m.getCurrentUserCalls++
+	if m.currentUserErr != nil {
+		return nil, m.currentUserErr
+	}
+	if m.currentUser != nil {
+		return m.currentUser, nil
+	}
+	return &dsclient.CurrentUser{}, nil
 }
 
 func TestTestAccount_BatchModeOnlyCreatesSession(t *testing.T) {
@@ -165,6 +183,10 @@ func (m *completionPayloadDSMock) DeleteAllSessionsForToken(_ context.Context, _
 
 func (m *completionPayloadDSMock) GetSessionCountForToken(_ context.Context, _ string) (*dsclient.SessionStats, error) {
 	return &dsclient.SessionStats{Success: true}, nil
+}
+
+func (m *completionPayloadDSMock) GetCurrentUser(_ context.Context, _ string) (*dsclient.CurrentUser, error) {
+	return &dsclient.CurrentUser{}, nil
 }
 
 func TestTestAccount_MessageModeUsesExpertModelTypeForExpertModel(t *testing.T) {

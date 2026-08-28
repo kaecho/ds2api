@@ -1,13 +1,8 @@
 package account
 
 func (p *Pool) canQueueLocked(target string, exclude map[string]bool) bool {
-	if target != "" {
-		if exclude[target] {
-			return false
-		}
-		if _, ok := p.store.FindAccount(target); !ok {
-			return false
-		}
+	if !p.hasUsableAccountLocked(target, exclude) {
+		return false
 	}
 	if p.maxQueueSize <= 0 {
 		return false

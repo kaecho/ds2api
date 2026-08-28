@@ -11,14 +11,17 @@ import (
 )
 
 type Store struct {
-	mu        sync.RWMutex
-	cfg       Config
-	path      string
-	fromEnv   bool
-	keyMap    map[string]struct{} // O(1) API key lookup index
-	accMap    map[string]int      // O(1) account lookup: identifier -> slice index
-	accTest   map[string]string   // runtime-only account test status cache
-	accBanned map[string]bool     // runtime-only banned account tracking
+	mu           sync.RWMutex
+	cfg          Config
+	path         string
+	fromEnv      bool
+	keyMap       map[string]struct{} // O(1) API key lookup index
+	accMap       map[string]int      // O(1) account lookup: identifier -> slice index
+	accTest      map[string]string   // runtime-only account test status cache
+	accBanned    map[string]bool     // runtime-only banned account tracking
+	accMuteUntil map[string]int64    // runtime-only mute until unix; -1 = muted with unknown end
+	accDailyDate string
+	accDailyUses map[string]int
 }
 
 func LoadStore() *Store {

@@ -17,6 +17,12 @@ func validateMergedRuntimeSettings(current config.RuntimeConfig, incoming *confi
 		if incoming.TokenRefreshIntervalHours > 0 {
 			merged.TokenRefreshIntervalHours = incoming.TokenRefreshIntervalHours
 		}
+		if incoming.AccountSchedule != "" {
+			merged.AccountSchedule = incoming.AccountSchedule
+		}
+		if incoming.AccountDailyLimit != nil {
+			merged.AccountDailyLimit = incoming.AccountDailyLimit
+		}
 	}
 	return validateRuntimeSettings(merged)
 }
@@ -31,6 +37,7 @@ func (h *Handler) applyRuntimeSettings() {
 	maxQueue := h.Store.RuntimeAccountMaxQueue(recommended)
 	global := h.Store.RuntimeGlobalMaxInflight(recommended)
 	h.Pool.ApplyRuntimeLimits(maxPer, maxQueue, global)
+	h.Pool.ApplySchedule(h.Store.RuntimeAccountSchedule(), h.Store.RuntimeAccountDailyLimit())
 }
 
 func defaultRuntimeRecommended(accountCount, maxPer int) int {
