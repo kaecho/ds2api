@@ -50,21 +50,22 @@ func (h *Handler) testSingleAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) testAllAccounts(w http.ResponseWriter, r *http.Request) {
-	var req map[string]any
+	req := map[string]any{}
 	_ = json.NewDecoder(r.Body).Decode(&req)
+	if req == nil {
+		req = map[string]any{}
+	}
 	model, _ := req["model"].(string)
 	if model == "" {
 		model = "deepseek-v4-flash"
 	}
-	accounts := h.Store.Snapshot().Accounts
+	accounts := h.accountsForJob(accountJobIdentifiers(req["identifiers"]))
 	if len(accounts) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"total": 0, "success": 0, "failed": 0, "results": []any{}})
 		return
 	}
 
-	// Concurrent testing with a semaphore to limit parallelism.
-	const maxConcurrency = 5
-	results := runAccountTestsConcurrently(accounts, maxConcurrency, func(_ int, account config.Account) map[string]any {
+	results := runAccountTestsConcurrently(accounts, accountJobConcurrency(req["concurrency"]), func(_ int, account config.Account) map[string]any {
 		return h.testAccount(r.Context(), account, model, "")
 	})
 

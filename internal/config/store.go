@@ -17,9 +17,9 @@ type Store struct {
 	fromEnv      bool
 	keyMap       map[string]struct{} // O(1) API key lookup index
 	accMap       map[string]int      // O(1) account lookup: identifier -> slice index
-	accTest      map[string]string   // runtime-only account test status cache
-	accBanned    map[string]bool     // runtime-only banned account tracking
-	accMuteUntil map[string]int64    // runtime-only mute until unix; -1 = muted with unknown end
+	accTest      map[string]string   // account test status cache; persisted on Account.TestStatus
+	accBanned    map[string]bool     // banned cache; persisted on Account.Banned
+	accMuteUntil map[string]int64    // mute until unix; -1 unknown end; persisted on Account.MuteUntil
 	accDailyDate string
 	accDailyUses map[string]int
 }
@@ -175,11 +175,6 @@ func loadConfigFromFile(path string) (Config, error) {
 	}
 	cfg.NormalizeCredentials()
 	cfg.DropInvalidAccounts()
-	if strings.Contains(string(content), `"test_status"`) && !IsVercel() {
-		if b, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-			_ = os.WriteFile(path, b, 0o644)
-		}
-	}
 	return cfg, nil
 }
 
@@ -227,7 +222,7 @@ func (s *Store) UpdateAccountTestStatus(identifier, status string) error {
 		return errors.New("account not found")
 	}
 	s.setAccountTestStatusLocked(s.cfg.Accounts[idx], status, identifier)
-	return nil
+	return s.saveLocked()
 }
 
 func (s *Store) AccountTestStatus(identifier string) (string, bool) {
@@ -249,10 +244,8 @@ func (s *Store) UpdateAccountBannedStatus(identifier string, banned bool) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.accBanned == nil {
-		s.accBanned = map[string]bool{}
-	}
-	s.accBanned[identifier] = banned
+	s.applyBannedLocked(identifier, banned)
+	s.persistHealthLocked()
 }
 
 // AccountBannedStatus returns whether an account is marked as banned.

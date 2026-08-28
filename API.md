@@ -154,8 +154,8 @@ Gemini 兼容客户端还可以使用 `x-goog-api-key`、`?key=` 或 `?api_key=`
 | PUT | `/admin/accounts/{identifier}/proxy` | Admin | 为账号绑定/解绑代理 |
 | GET | `/admin/queue/status` | Admin | 账号队列状态 |
 | POST | `/admin/accounts/test` | Admin | 测试单个账号 |
-| POST | `/admin/accounts/test-all` | Admin | 测试全部账号 |
-| POST | `/admin/accounts/check-status` | Admin | 检测账号健康/短暂封禁/永久封禁 |
+| POST | `/admin/accounts/test-all` | Admin | 并行刷新选中或全部账号 Token |
+| POST | `/admin/accounts/check-status` | Admin | 并行检测选中或全部账号健康/短暂封禁/永久封禁 |
 | POST | `/admin/accounts/sessions/delete-all` | Admin | 删除某账号的全部会话 |
 | POST | `/admin/import` | Admin | 批量导入 keys/accounts |
 | POST | `/admin/test` | Admin | 测试当前 API 可用性 |
@@ -1003,7 +1003,7 @@ data: {"type":"message_stop"}
 
 ### `POST /admin/accounts/test-all`
 
-可选请求字段：`model`
+可选请求字段：`model`、`identifiers`（账号标识数组，省略则检测全部）、`concurrency`（默认 10，最大 32）。
 
 ```json
 {
@@ -1014,18 +1014,25 @@ data: {"type":"message_stop"}
 }
 ```
 
-内部并发上限当前固定为 5。
+控制台「刷新选中 Token」会传入当前页勾选的 `identifiers`，服务端并行登录。
 
 ### `POST /admin/accounts/check-status`
 
-登录每个账号并请求 DeepSeek `GET /api/v0/users/current`，按 `chat.is_muted` / `chat.mute_until` 与登录封禁错误分类：
+登录每个目标账号并请求 DeepSeek `GET /api/v0/users/current`，按 `chat.is_muted` / `chat.mute_until` 与登录封禁错误分类：
 
 - `healthy`：可调度
 - `muted`：短暂封禁，自动暂停，冷却结束后重新启用
 - `banned`：永久封禁（登录 `user_is_banned` 等）
 - `failed`：登录或状态查询失败
 
-内部并发上限当前固定为 5。无需请求体。
+可选请求字段：`identifiers`（省略则检测全部）、`concurrency`（默认 10，最大 32）。`banned`、`mute_until`、`test_status` 会写入 `config.json` 的对应账号，重启后仍生效。
+
+```json
+{
+  "identifiers": ["user@example.com"],
+  "concurrency": 10
+}
+```
 
 ```json
 {

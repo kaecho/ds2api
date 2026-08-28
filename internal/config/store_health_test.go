@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -60,5 +62,83 @@ func TestUpdateAccountMuteUntilZeroClears(t *testing.T) {
 	store.UpdateAccountMuteUntil("u@example.com", 0)
 	if store.AccountMuted("u@example.com") {
 		t.Fatal("expected mute cleared")
+	}
+}
+
+func TestAccountHealthPersistsAcrossReload(t *testing.T) {
+	tmp, err := os.CreateTemp(t.TempDir(), "config-*.json")
+	if err != nil {
+		t.Fatalf("create temp config: %v", err)
+	}
+	path := tmp.Name()
+	if _, err := tmp.WriteString(`{"accounts":[{"email":"u@example.com","password":"p"}]}`); err != nil {
+		t.Fatalf("write temp config: %v", err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp config: %v", err)
+	}
+
+	t.Setenv("DS2API_CONFIG_JSON", "")
+	t.Setenv("DS2API_CONFIG_PATH", path)
+
+	store := LoadStore()
+	until := time.Now().Add(2 * time.Hour).Unix()
+	if err := store.UpdateAccountHealth("u@example.com", false, until, "muted"); err != nil {
+		t.Fatalf("update health: %v", err)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	raw := string(content)
+	if !strings.Contains(raw, `"test_status"`) || !strings.Contains(raw, `"muted"`) {
+		t.Fatalf("expected test_status muted in config, got %s", raw)
+	}
+	if !strings.Contains(raw, `"mute_until"`) {
+		t.Fatalf("expected mute_until in config, got %s", raw)
+	}
+
+	reloaded := LoadStore()
+	if !reloaded.AccountMuted("u@example.com") {
+		t.Fatal("expected mute to survive reload")
+	}
+	if got, ok := reloaded.AccountTestStatus("u@example.com"); !ok || got != "muted" {
+		t.Fatalf("expected muted test status after reload, got %q ok=%v", got, ok)
+	}
+	acc, ok := reloaded.FindAccount("u@example.com")
+	if !ok || acc.MuteUntil != until {
+		t.Fatalf("expected mute_until %d after reload, got ok=%v until=%d", until, ok, acc.MuteUntil)
+	}
+}
+
+func TestAccountBannedPersistsAcrossReload(t *testing.T) {
+	tmp, err := os.CreateTemp(t.TempDir(), "config-*.json")
+	if err != nil {
+		t.Fatalf("create temp config: %v", err)
+	}
+	path := tmp.Name()
+	if _, err := tmp.WriteString(`{"accounts":[{"email":"u@example.com","password":"p"}]}`); err != nil {
+		t.Fatalf("write temp config: %v", err)
+	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp config: %v", err)
+	}
+
+	t.Setenv("DS2API_CONFIG_JSON", "")
+	t.Setenv("DS2API_CONFIG_PATH", path)
+
+	store := LoadStore()
+	store.UpdateAccountBannedStatus("u@example.com", true)
+	if err := store.UpdateAccountTestStatus("u@example.com", "banned"); err != nil {
+		t.Fatalf("update test status: %v", err)
+	}
+
+	reloaded := LoadStore()
+	if !reloaded.AccountBannedStatus("u@example.com") {
+		t.Fatal("expected banned status to survive reload")
+	}
+	if got, ok := reloaded.AccountTestStatus("u@example.com"); !ok || got != "banned" {
+		t.Fatalf("expected banned test status after reload, got %q ok=%v", got, ok)
 	}
 }

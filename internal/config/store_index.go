@@ -1,5 +1,7 @@
 package config
 
+import "strings"
+
 // rebuildIndexes must be called with the lock already held (or during init).
 func (s *Store) rebuildIndexes() {
 	prevStatus := s.accTest
@@ -19,20 +21,30 @@ func (s *Store) rebuildIndexes() {
 	s.accDailyUses = make(map[string]int, len(s.cfg.Accounts))
 	for i, acc := range s.cfg.Accounts {
 		id := acc.Identifier()
-		if id != "" {
-			s.accMap[id] = i
-			if status, ok := prevStatus[id]; ok {
-				s.setAccountTestStatusLocked(acc, status, "")
-			}
-			if banned, ok := prevBanned[id]; ok && banned {
-				s.accBanned[id] = true
-			}
-			if until, ok := prevMute[id]; ok && until != 0 {
-				s.accMuteUntil[id] = until
-			}
-			if n, ok := prevUses[id]; ok && n > 0 {
-				s.accDailyUses[id] = n
-			}
+		if id == "" {
+			continue
+		}
+		s.accMap[id] = i
+		if acc.TestStatus != "" {
+			s.setAccountTestStatusLocked(acc, acc.TestStatus, "")
+		}
+		if acc.Banned {
+			s.accBanned[id] = true
+		}
+		if acc.MuteUntil != 0 {
+			s.accMuteUntil[id] = acc.MuteUntil
+		}
+		if status, ok := prevStatus[id]; ok {
+			s.setAccountTestStatusLocked(acc, status, "")
+		}
+		if banned, ok := prevBanned[id]; ok && banned {
+			s.accBanned[id] = true
+		}
+		if until, ok := prevMute[id]; ok && until != 0 {
+			s.accMuteUntil[id] = until
+		}
+		if n, ok := prevUses[id]; ok && n > 0 {
+			s.accDailyUses[id] = n
 		}
 	}
 }
@@ -56,6 +68,14 @@ func (s *Store) setAccountTestStatusLocked(acc Account, status, hintedIdentifier
 	status = lower(status)
 	if status == "" {
 		return
+	}
+	id := acc.Identifier()
+	if id == "" {
+		id = strings.TrimSpace(hintedIdentifier)
+	}
+	if idx, ok := s.findAccountIndexLocked(id); ok {
+		s.cfg.Accounts[idx].TestStatus = status
+		acc = s.cfg.Accounts[idx]
 	}
 	if id := acc.Identifier(); id != "" {
 		s.accTest[id] = status

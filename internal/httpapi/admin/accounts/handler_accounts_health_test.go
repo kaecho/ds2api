@@ -151,3 +151,42 @@ func TestCheckAllAccountStatusRoute(t *testing.T) {
 		t.Fatalf("muted count=%v payload=%#v", payload["muted"], payload)
 	}
 }
+
+func TestCheckAccountStatusFiltersIdentifiers(t *testing.T) {
+	until := time.Now().Add(time.Hour).Unix()
+	ds := &testingDSMock{currentUser: &dsclient.CurrentUser{IsMuted: true, MuteUntilUnix: until}}
+	router := newHTTPAdminHarness(t, `{"accounts":[
+		{"email":"a@example.com","password":"pwd"},
+		{"email":"b@example.com","password":"pwd"}
+	]}`, ds)
+	body, err := json.Marshal(map[string]any{
+		"identifiers": []string{"a@example.com"},
+		"concurrency": 1,
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, adminReq(http.MethodPost, "/accounts/check-status", body))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if total, _ := payload["total"].(float64); total != 1 {
+		t.Fatalf("total=%v payload=%#v", payload["total"], payload)
+	}
+	if ds.loginCalls != 1 {
+		t.Fatalf("expected one login for selected account, got %d", ds.loginCalls)
+	}
+	results, _ := payload["results"].([]any)
+	if len(results) != 1 {
+		t.Fatalf("results=%d payload=%#v", len(results), payload)
+	}
+	first, _ := results[0].(map[string]any)
+	if account, _ := first["account"].(string); account != "a@example.com" {
+		t.Fatalf("account=%v", first["account"])
+	}
+}

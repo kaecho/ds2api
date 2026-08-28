@@ -241,70 +241,87 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         }
     }
 
-    const testAllAccounts = async () => {
-        if (!confirm(t('accountManager.testAllConfirm'))) return
-        const allAccounts = config.accounts || []
-        if (allAccounts.length === 0) return
+    const testAllAccounts = async (identifiers = []) => {
+        const ids = (identifiers || []).map(id => String(id || '').trim()).filter(Boolean)
+        if (ids.length === 0) {
+            onMessage('error', t('accountManager.noSelection'))
+            return
+        }
+        if (!confirm(t('accountManager.testAllConfirm', { count: ids.length }))) return
 
         setTestingAll(true)
-        setBatchProgress({ current: 0, total: allAccounts.length, results: [] })
-
-        let successCount = 0
-        const results = []
-
-        for (let i = 0; i < allAccounts.length; i++) {
-            const acc = allAccounts[i]
-            const id = resolveAccountIdentifier(acc)
-            if (!id) {
-                results.push({ id: '-', success: false, message: t('accountManager.invalidIdentifier') })
-                setBatchProgress({ current: i + 1, total: allAccounts.length, results: [...results] })
-                continue
-            }
-
-            try {
-                const res = await apiFetch('/admin/accounts/test', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier: id }),
-                })
-                const data = await res.json()
-                results.push({ id, success: data.success, message: data.message, time: data.response_time })
-                if (data.success) successCount++
-            } catch (e) {
-                results.push({ id, success: false, message: e.message })
-            }
-
-            setBatchProgress({ current: i + 1, total: allAccounts.length, results: [...results] })
-        }
-
-        onMessage('success', t('accountManager.testAllCompleted', { success: successCount, total: allAccounts.length }))
-        fetchAccounts()
-        onRefresh()
-        setTestingAll(false)
-    }
-
-    const checkAllAccountStatus = async () => {
-        if (!confirm(t('accountManager.checkStatusConfirm'))) return
-        const allAccounts = config.accounts || []
-        if (allAccounts.length === 0) return
-
-        setCheckingAll(true)
+        setBatchProgress({ current: 0, total: ids.length, results: [] })
         try {
-            const res = await apiFetch('/admin/accounts/check-status', {
+            const res = await apiFetch('/admin/accounts/test-all', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiers: ids, concurrency: 10 }),
             })
             const data = await res.json()
             if (!res.ok) {
                 onMessage('error', data.detail || t('messages.requestFailed'))
                 return
             }
+            const results = (data.results || []).map(r => ({
+                id: r.account || '-',
+                success: Boolean(r.success),
+                message: r.message,
+            }))
+            setBatchProgress({
+                current: data.total || ids.length,
+                total: data.total || ids.length,
+                results,
+            })
+            onMessage('success', t('accountManager.testAllCompleted', {
+                success: data.success || 0,
+                total: data.total || ids.length,
+            }))
+            fetchAccounts()
+            onRefresh()
+        } catch (e) {
+            onMessage('error', t('accountManager.testFailed', { error: e.message }))
+        } finally {
+            setTestingAll(false)
+        }
+    }
+
+    const checkAllAccountStatus = async (identifiers = []) => {
+        const ids = (identifiers || []).map(id => String(id || '').trim()).filter(Boolean)
+        if (ids.length === 0) {
+            onMessage('error', t('accountManager.noSelection'))
+            return
+        }
+        if (!confirm(t('accountManager.checkStatusConfirm', { count: ids.length }))) return
+
+        setCheckingAll(true)
+        setBatchProgress({ current: 0, total: ids.length, results: [] })
+        try {
+            const res = await apiFetch('/admin/accounts/check-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifiers: ids, concurrency: 10 }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                onMessage('error', data.detail || t('messages.requestFailed'))
+                return
+            }
+            const results = (data.results || []).map(r => ({
+                id: r.account || '-',
+                success: Boolean(r.success),
+                message: r.message,
+            }))
+            setBatchProgress({
+                current: data.total || ids.length,
+                total: data.total || ids.length,
+                results,
+            })
             onMessage('success', t('accountManager.checkStatusCompleted', {
                 healthy: data.healthy || 0,
                 muted: data.muted || 0,
                 banned: data.banned || 0,
                 failed: data.failed || 0,
-                total: data.total || allAccounts.length,
+                total: data.total || ids.length,
             }))
             fetchAccounts()
             onRefresh()

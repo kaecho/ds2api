@@ -23,6 +23,7 @@ type ConfigStore interface {
 	BannedAccountIdentifiers() []string
 	RemoveBannedAccounts() ([]string, error)
 	UpdateAccountMuteUntil(identifier string, muteUntil int64)
+	UpdateAccountHealth(identifier string, banned bool, muteUntil int64, testStatus string) error
 	AccountMuteUntil(identifier string) int64
 	AccountMuted(identifier string) bool
 	ClearExpiredMutes(now int64) []string

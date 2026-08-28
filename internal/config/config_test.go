@@ -428,37 +428,32 @@ func TestLoadConfigOnVercelWithoutConfigFileFallsBackToMemory(t *testing.T) {
 	}
 }
 
-func TestAccountTestStatusIsRuntimeOnlyAndNotPersisted(t *testing.T) {
+func TestAccountHealthLoadsFromConfig(t *testing.T) {
 	tmp, err := os.CreateTemp(t.TempDir(), "config-*.json")
 	if err != nil {
 		t.Fatalf("create temp config: %v", err)
 	}
-	defer func() { _ = tmp.Close() }()
+	path := tmp.Name()
 	if _, err := tmp.WriteString(`{
-		"accounts":[{"email":"u@example.com","password":"p","test_status":"ok"}]
+		"accounts":[{"email":"u@example.com","password":"p","test_status":"ok","banned":true,"mute_until":1999999999}]
 	}`); err != nil {
 		t.Fatalf("write temp config: %v", err)
 	}
+	if err := tmp.Close(); err != nil {
+		t.Fatalf("close temp config: %v", err)
+	}
 
 	t.Setenv("DS2API_CONFIG_JSON", "")
-	t.Setenv("DS2API_CONFIG_PATH", tmp.Name())
+	t.Setenv("DS2API_CONFIG_PATH", path)
 
 	store := LoadStore()
-	if got, ok := store.AccountTestStatus("u@example.com"); ok || got != "" {
-		t.Fatalf("expected no runtime status loaded from config, got %q", got)
-	}
-	if err := store.UpdateAccountTestStatus("u@example.com", "ok"); err != nil {
-		t.Fatalf("update test status: %v", err)
-	}
 	if got, ok := store.AccountTestStatus("u@example.com"); !ok || got != "ok" {
-		t.Fatalf("expected runtime status to be available, got %q (ok=%v)", got, ok)
+		t.Fatalf("expected persisted test status, got %q (ok=%v)", got, ok)
 	}
-
-	content, err := os.ReadFile(tmp.Name())
-	if err != nil {
-		t.Fatalf("read config: %v", err)
+	if !store.AccountBannedStatus("u@example.com") {
+		t.Fatal("expected banned status to load from config")
 	}
-	if strings.Contains(string(content), "test_status") {
-		t.Fatalf("expected test_status to stay out of persisted config, got: %s", content)
+	if got := store.AccountMuteUntil("u@example.com"); got != 1999999999 {
+		t.Fatalf("expected mute_until 1999999999, got %d", got)
 	}
 }

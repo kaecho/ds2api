@@ -154,8 +154,8 @@ Gemini-compatible clients can also send `x-goog-api-key`, `?key=`, or `?api_key=
 | PUT | `/admin/accounts/{identifier}/proxy` | Admin | Bind/unbind proxy for an account |
 | GET | `/admin/queue/status` | Admin | Account queue status |
 | POST | `/admin/accounts/test` | Admin | Test one account |
-| POST | `/admin/accounts/test-all` | Admin | Test all accounts |
-| POST | `/admin/accounts/check-status` | Admin | Check healthy / muted / permanently banned |
+| POST | `/admin/accounts/test-all` | Admin | Refresh tokens for selected or all accounts in parallel |
+| POST | `/admin/accounts/check-status` | Admin | Check selected or all accounts: healthy / muted / permanently banned |
 | POST | `/admin/accounts/sessions/delete-all` | Admin | Delete all sessions for one account |
 | POST | `/admin/import` | Admin | Batch import keys/accounts |
 | POST | `/admin/test` | Admin | Test API through service |
@@ -994,7 +994,7 @@ When the configured file path is not writable (for example, read-only `/app/conf
 
 ### `POST /admin/accounts/test-all`
 
-Optional request field: `model`.
+Optional request fields: `model`, `identifiers` (account IDs; omit to test every account), `concurrency` (default 10, max 32).
 
 ```json
 {
@@ -1005,18 +1005,25 @@ Optional request field: `model`.
 }
 ```
 
-The internal concurrency limit is currently fixed at 5.
+The admin console "Refresh selected tokens" action sends the checked IDs from the current page.
 
 ### `POST /admin/accounts/check-status`
 
-Logs in each account and calls DeepSeek `GET /api/v0/users/current`. Classification uses `chat.is_muted` / `chat.mute_until` plus login ban errors:
+Logs in each target account and calls DeepSeek `GET /api/v0/users/current`. Classification uses `chat.is_muted` / `chat.mute_until` plus login ban errors:
 
 - `healthy`: available for scheduling
 - `muted`: short chat mute; paused until cooldown ends
 - `banned`: permanent ban (login `user_is_banned` and similar)
 - `failed`: login or status lookup failed
 
-Internal concurrency is currently capped at 5. No request body.
+Optional request fields: `identifiers` (omit to check every account), `concurrency` (default 10, max 32). `banned`, `mute_until`, and `test_status` are written onto the matching account in `config.json` and survive process restart.
+
+```json
+{
+  "identifiers": ["user@example.com"],
+  "concurrency": 10
+}
+```
 
 ```json
 {

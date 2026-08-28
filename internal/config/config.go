@@ -30,15 +30,18 @@ type Config struct {
 }
 
 type Account struct {
-	Name      string `json:"name,omitempty"`
-	Remark    string `json:"remark,omitempty"`
-	Email     string `json:"email,omitempty"`
-	Mobile    string `json:"mobile,omitempty"`
-	Password  string `json:"password,omitempty"`
-	Token     string `json:"token,omitempty"`
-	ProxyID   string `json:"proxy_id,omitempty"`
-	DeviceID  string `json:"device_id,omitempty"`
-	RangersID string `json:"rangers_id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Remark     string `json:"remark,omitempty"`
+	Email      string `json:"email,omitempty"`
+	Mobile     string `json:"mobile,omitempty"`
+	Password   string `json:"password,omitempty"`
+	Token      string `json:"token,omitempty"`
+	ProxyID    string `json:"proxy_id,omitempty"`
+	DeviceID   string `json:"device_id,omitempty"`
+	RangersID  string `json:"rangers_id,omitempty"`
+	Banned     bool   `json:"banned,omitempty"`
+	MuteUntil  int64  `json:"mute_until,omitempty"`
+	TestStatus string `json:"test_status,omitempty"`
 }
 
 type APIKey struct {

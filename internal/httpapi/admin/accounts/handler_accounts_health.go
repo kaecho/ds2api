@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,15 +13,19 @@ import (
 )
 
 func (h *Handler) checkAllAccountStatus(w http.ResponseWriter, r *http.Request) {
-	accounts := h.Store.Snapshot().Accounts
+	req := map[string]any{}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	if req == nil {
+		req = map[string]any{}
+	}
+	accounts := h.accountsForJob(accountJobIdentifiers(req["identifiers"]))
 	if len(accounts) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"total": 0, "healthy": 0, "muted": 0, "banned": 0, "failed": 0, "results": []any{},
 		})
 		return
 	}
-	const maxConcurrency = 5
-	results := runAccountTestsConcurrently(accounts, maxConcurrency, func(_ int, account config.Account) map[string]any {
+	results := runAccountTestsConcurrently(accounts, accountJobConcurrency(req["concurrency"]), func(_ int, account config.Account) map[string]any {
 		return h.checkAccountStatus(r.Context(), account)
 	})
 	healthy, muted, banned, failed := 0, 0, 0, 0
@@ -84,7 +89,6 @@ func (h *Handler) checkAccountStatus(ctx context.Context, acc config.Account) ma
 	}
 	if health == "healthy" {
 		result["success"] = true
-		_ = h.Store.UpdateAccountTestStatus(identifier, "ok")
 	}
 	if health == "muted" || health == "banned" {
 		result["success"] = true
@@ -117,20 +121,17 @@ func (h *Handler) applyCurrentUserHealth(identifier string, user *dsclient.Curre
 	if user != nil && user.IsMuted {
 		until := user.MuteUntilUnix
 		if until > now {
-			h.Store.UpdateAccountMuteUntil(identifier, until)
 			muteUntil = until
 		} else {
-			h.Store.UpdateAccountMuteUntil(identifier, -1)
+			until = -1
 		}
-		h.Store.UpdateAccountBannedStatus(identifier, false)
-		_ = h.Store.UpdateAccountTestStatus(identifier, "muted")
+		_ = h.Store.UpdateAccountHealth(identifier, false, until, "muted")
 		h.wakePool()
 		return "muted", muteUntil
 	}
 	wasMuted := h.Store.AccountMuted(identifier)
 	wasBanned := h.Store.AccountBannedStatus(identifier)
-	h.Store.UpdateAccountMuteUntil(identifier, 0)
-	h.Store.UpdateAccountBannedStatus(identifier, false)
+	_ = h.Store.UpdateAccountHealth(identifier, false, 0, "ok")
 	if wasMuted || wasBanned {
 		h.wakePool()
 	}
@@ -138,9 +139,7 @@ func (h *Handler) applyCurrentUserHealth(identifier string, user *dsclient.Curre
 }
 
 func (h *Handler) markAccountBanned(identifier string) {
-	h.Store.UpdateAccountBannedStatus(identifier, true)
-	h.Store.UpdateAccountMuteUntil(identifier, 0)
-	_ = h.Store.UpdateAccountTestStatus(identifier, "banned")
+	_ = h.Store.UpdateAccountHealth(identifier, true, 0, "banned")
 	h.wakePool()
 }
 

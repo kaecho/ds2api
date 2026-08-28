@@ -1,6 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX, Activity } from 'lucide-react'
 import clsx from 'clsx'
+
+function accountHealthKey(acc) {
+    if (acc.banned || acc.health === 'banned') return 'banned'
+    if (acc.muted || acc.health === 'muted') return 'muted'
+    if (acc.health === 'failed' || acc.test_status === 'failed') return 'failed'
+    if (acc.health === 'healthy' || acc.test_status === 'ok') return 'healthy'
+    return 'unknown'
+}
 
 export default function AccountsTable({
     t,
@@ -35,6 +43,20 @@ export default function AccountsTable({
     envBacked = false,
 }) {
     const [copiedId, setCopiedId] = useState(null)
+    const [selected, setSelected] = useState(() => new Set())
+
+    const pageIds = useMemo(
+        () => accounts.map(acc => resolveAccountIdentifier(acc)).filter(Boolean),
+        [accounts, resolveAccountIdentifier],
+    )
+    const selectedIds = pageIds.filter(id => selected.has(id))
+    const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id))
+    const busy = checkingAll || testingAll
+    const hasSelection = selectedIds.length > 0
+
+    useEffect(() => {
+        setSelected(new Set())
+    }, [page, pageSize, searchQuery])
 
     const copyId = (id) => {
         navigator.clipboard.writeText(id).then(() => {
@@ -42,12 +64,48 @@ export default function AccountsTable({
             setTimeout(() => setCopiedId(null), 1500)
         })
     }
+
+    const toggleOne = (id) => {
+        if (!id) return
+        setSelected(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }
+
+    const togglePage = () => {
+        if (allPageSelected) setSelected(new Set())
+        else setSelected(new Set(pageIds))
+    }
+
+    const selectByStatus = (key) => {
+        if (key === 'none') {
+            setSelected(new Set())
+            return
+        }
+        if (key === 'all') {
+            setSelected(new Set(pageIds))
+            return
+        }
+        const next = new Set()
+        for (const acc of accounts) {
+            const id = resolveAccountIdentifier(acc)
+            if (id && accountHealthKey(acc) === key) next.add(id)
+        }
+        setSelected(next)
+    }
+
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
             <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-lg font-semibold">{t('accountManager.accountsTitle')}</h2>
                     <p className="text-sm text-muted-foreground">{t('accountManager.accountsDesc')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {t('accountManager.selectedCount', { count: selectedIds.length })}
+                    </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <input
@@ -57,17 +115,34 @@ export default function AccountsTable({
                         placeholder={t('accountManager.searchPlaceholder')}
                         className="px-3 py-1.5 text-sm bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                     />
+                    <select
+                        value=""
+                        onChange={e => {
+                            if (e.target.value) selectByStatus(e.target.value)
+                        }}
+                        disabled={busy || accounts.length === 0}
+                        className="px-3 py-1.5 text-xs bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                    >
+                        <option value="" disabled>{t('accountManager.selectOnPage')}</option>
+                        <option value="all">{t('accountManager.selectAllOnPage')}</option>
+                        <option value="none">{t('accountManager.selectNone')}</option>
+                        <option value="healthy">{t('accountManager.selectHealthy')}</option>
+                        <option value="muted">{t('accountManager.selectMuted')}</option>
+                        <option value="banned">{t('accountManager.selectBanned')}</option>
+                        <option value="failed">{t('accountManager.selectFailed')}</option>
+                        <option value="unknown">{t('accountManager.selectUnknown')}</option>
+                    </select>
                     <button
-                        onClick={onCheckStatus}
-                        disabled={checkingAll || testingAll || totalAccounts === 0}
+                        onClick={() => onCheckStatus(selectedIds)}
+                        disabled={busy || !hasSelection}
                         className="flex items-center px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border disabled:opacity-50"
                     >
                         {checkingAll ? <span className="animate-spin mr-2">⟳</span> : <Activity className="w-3 h-3 mr-2" />}
                         {t('accountManager.checkStatus')}
                     </button>
                     <button
-                        onClick={onTestAll}
-                        disabled={testingAll || checkingAll || totalAccounts === 0}
+                        onClick={() => onTestAll(selectedIds)}
+                        disabled={busy || !hasSelection}
                         className="flex items-center px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border disabled:opacity-50"
                     >
                         {testingAll ? <span className="animate-spin mr-2">⟳</span> : <Play className="w-3 h-3 mr-2" />}
@@ -83,27 +158,24 @@ export default function AccountsTable({
                 </div>
             </div>
 
-            {checkingAll && (
-                <div className="p-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{t('accountManager.checkingAllAccounts')}</span>
-                        <span className="animate-spin">⟳</span>
-                    </div>
-                </div>
-            )}
-
-            {testingAll && batchProgress.total > 0 && (
+            {(checkingAll || testingAll) && (
                 <div className="p-4 border-b border-border bg-muted/30">
                     <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="font-medium">{t('accountManager.testingAllAccounts')}</span>
-                        <span className="text-muted-foreground">{batchProgress.current} / {batchProgress.total}</span>
+                        <span className="font-medium">
+                            {checkingAll ? t('accountManager.checkingSelectedAccounts') : t('accountManager.testingSelectedAccounts')}
+                        </span>
+                        <span className="text-muted-foreground">
+                            {batchProgress.total > 0 ? `${batchProgress.current} / ${batchProgress.total}` : <span className="animate-spin">⟳</span>}
+                        </span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-4">
-                        <div
-                            className="bg-primary h-full transition-all duration-300"
-                            style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                        />
-                    </div>
+                    {batchProgress.total > 0 && (
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-4">
+                            <div
+                                className="bg-primary h-full transition-all duration-300"
+                                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                            />
+                        </div>
+                    )}
                     {batchProgress.results.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                             {batchProgress.results.map((r, i) => (
@@ -123,7 +195,19 @@ export default function AccountsTable({
                 {loadingAccounts ? (
                     <div className="p-8 text-center text-muted-foreground">{t('actions.loading')}</div>
                 ) : accounts.length > 0 ? (
-                    accounts.map((acc, i) => {
+                    <>
+                        <div className="px-4 py-2 flex items-center gap-3 bg-muted/20 text-xs text-muted-foreground">
+                            <input
+                                type="checkbox"
+                                checked={allPageSelected}
+                                onChange={togglePage}
+                                disabled={busy || pageIds.length === 0}
+                                className="rounded border-border"
+                                aria-label={t('accountManager.selectAllOnPage')}
+                            />
+                            <span>{t('accountManager.selectAllOnPage')}</span>
+                        </div>
+                        {accounts.map((acc, i) => {
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
                         const runtimeUnknown = envBacked && !acc.test_status
@@ -145,6 +229,13 @@ export default function AccountsTable({
                         return (
                             <div key={i} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(id) && selected.has(id)}
+                                        onChange={() => toggleOne(id)}
+                                        disabled={busy || !id}
+                                        className="rounded border-border shrink-0"
+                                    />
                                     <div className={clsx(
                                         "w-2 h-2 rounded-full shrink-0",
                                         isBanned ? "bg-red-700 shadow-[0_0_8px_rgba(185,28,28,0.5)]" :
@@ -250,7 +341,8 @@ export default function AccountsTable({
                                 </div>
                             </div>
                         )
-                    })
+                    })}
+                    </>
                 ) : (
                     <div className="p-8 text-center text-muted-foreground">{searchQuery ? t('accountManager.searchNoResults') : t('accountManager.noAccounts')}</div>
                 )}

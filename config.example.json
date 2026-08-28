@@ -19,7 +19,7 @@
   ],
   "accounts": [
     {
-      "_comment": "邮箱登录方式",
+      "_comment": "邮箱登录方式。检测后会写入 banned / mute_until / test_status，重启后仍按该状态调度。",
       "name": "主账号",
       "remark": "优先用于生产流量",
       "email": "example1@example.com",
