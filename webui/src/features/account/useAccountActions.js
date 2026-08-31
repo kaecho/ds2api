@@ -251,30 +251,29 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
 
         setTestingAll(true)
         setBatchProgress({ current: 0, total: ids.length, results: [] })
+        const allResults = []
+        let successCount = 0
         try {
-            const res = await apiFetch('/admin/accounts/test-all', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifiers: ids, concurrency: 10 }),
-            })
-            const data = await res.json()
-            if (!res.ok) {
-                onMessage('error', data.detail || t('messages.requestFailed'))
-                return
+            for (let i = 0; i < ids.length; i++) {
+                const res = await apiFetch('/admin/accounts/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: ids[i] }),
+                })
+                const data = await res.json()
+                const ok = res.ok && Boolean(data.success)
+                const result = { id: ids[i], success: ok, message: data.message || '' }
+                allResults.push(result)
+                if (ok) successCount++
+                setBatchProgress({
+                    current: i + 1,
+                    total: ids.length,
+                    results: [...allResults],
+                })
             }
-            const results = (data.results || []).map(r => ({
-                id: r.account || '-',
-                success: Boolean(r.success),
-                message: r.message,
-            }))
-            setBatchProgress({
-                current: data.total || ids.length,
-                total: data.total || ids.length,
-                results,
-            })
             onMessage('success', t('accountManager.testAllCompleted', {
-                success: data.success || 0,
-                total: data.total || ids.length,
+                success: successCount,
+                total: ids.length,
             }))
             fetchAccounts()
             onRefresh()
@@ -295,33 +294,40 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
 
         setCheckingAll(true)
         setBatchProgress({ current: 0, total: ids.length, results: [] })
+        const allResults = []
+        let healthy = 0, muted = 0, banned = 0, failed = 0
         try {
-            const res = await apiFetch('/admin/accounts/check-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifiers: ids, concurrency: 10 }),
-            })
-            const data = await res.json()
-            if (!res.ok) {
-                onMessage('error', data.detail || t('messages.requestFailed'))
-                return
+            for (let i = 0; i < ids.length; i++) {
+                const res = await apiFetch('/admin/accounts/check-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifiers: [ids[i]], concurrency: 1 }),
+                })
+                if (!res.ok) continue
+                const data = await res.json()
+                if (data.results && data.results.length > 0) {
+                    const r = data.results[0]
+                    const result = { id: r.account || ids[i], success: Boolean(r.success), message: r.message || '' }
+                    allResults.push(result)
+                    switch (r.health) {
+                        case 'healthy': healthy++; break
+                        case 'muted': muted++; break
+                        case 'banned': banned++; break
+                        default: failed++; break
+                    }
+                }
+                setBatchProgress({
+                    current: i + 1,
+                    total: ids.length,
+                    results: [...allResults],
+                })
             }
-            const results = (data.results || []).map(r => ({
-                id: r.account || '-',
-                success: Boolean(r.success),
-                message: r.message,
-            }))
-            setBatchProgress({
-                current: data.total || ids.length,
-                total: data.total || ids.length,
-                results,
-            })
             onMessage('success', t('accountManager.checkStatusCompleted', {
-                healthy: data.healthy || 0,
-                muted: data.muted || 0,
-                banned: data.banned || 0,
-                failed: data.failed || 0,
-                total: data.total || ids.length,
+                healthy,
+                muted,
+                banned,
+                failed,
+                total: ids.length,
             }))
             fetchAccounts()
             onRefresh()
@@ -331,7 +337,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
             setCheckingAll(false)
         }
     }
-
     const deleteAllSessions = async (identifier) => {
         const accountID = String(identifier || '').trim()
         if (!accountID) {

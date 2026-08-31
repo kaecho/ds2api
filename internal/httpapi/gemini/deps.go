@@ -27,6 +27,8 @@ type ConfigReader interface {
 	CurrentInputFileMinChars() int
 	ResponseReplacementsEnabled() bool
 	ResponseReplacementRules() []config.ResponseReplacementRule
+	RetryOnFailureMaxAttempts() int
+	RetryOnFailureMuteDurationMinutes() int
 }
 
 type OpenAIChatRunner interface {

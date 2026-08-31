@@ -32,6 +32,8 @@ type ConfigReader interface {
 	AutoDeleteMode() string
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
+	RetryOnFailureMaxAttempts() int
+	RetryOnFailureMuteDurationMinutes() int
 }
 
 type OpenAIChatRunner interface {

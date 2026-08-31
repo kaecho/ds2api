@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -99,9 +100,18 @@ func (h *Handler) handleGeminiDirect(w http.ResponseWriter, r *http.Request, str
 		return true
 	}
 	result, outErr := completionruntime.ExecuteNonStreamWithRetry(r.Context(), h.DS, a, stdReq, completionruntime.Options{
-		RetryEnabled:         true,
-		CurrentInputFile:     h.Store,
-		ResponseReplacements: h.responseReplacementRules(),
+		RetryEnabled:                      true,
+		CurrentInputFile:                  h.Store,
+		ResponseReplacements:              h.responseReplacementRules(),
+		RetryOnFailureMaxAttempts:         h.Store.RetryOnFailureMaxAttempts(),
+		RetryOnFailureMuteDurationMinutes: h.Store.RetryOnFailureMuteDurationMinutes(),
+		MuteAccount: func(accountID string, durationMinutes int) {
+			if accountID != "" {
+				if store, ok := h.Store.(*config.Store); ok {
+					store.UpdateAccountMuteUntil(accountID, time.Now().Unix()+int64(durationMinutes)*60)
+				}
+			}
+		},
 	})
 	if outErr != nil {
 		if historySession != nil {

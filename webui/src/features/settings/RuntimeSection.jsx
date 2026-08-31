@@ -90,6 +90,42 @@ export default function RuntimeSection({ t, form, setForm }) {
                     />
                 </label>
             </div>
+            <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-medium mb-2">{t('settings.retryOnFailureTitle')}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <label className="text-sm space-y-2">
+                        <span className="text-muted-foreground">{t('settings.retryOnFailureMaxAttempts')}</span>
+                        <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={form.runtime.retry_on_failure_max_attempts}
+                            onChange={(e) => setForm((prev) => ({
+                                ...prev,
+                                runtime: { ...prev.runtime, retry_on_failure_max_attempts: Number(e.target.value || 0) },
+                            }))}
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2"
+                        />
+                        <p className="text-xs text-muted-foreground">{t('settings.retryOnFailureMaxAttemptsHelp')}</p>
+                    </label>
+                    <label className="text-sm space-y-2">
+                        <span className="text-muted-foreground">{t('settings.retryOnFailureMuteDuration')}</span>
+                        <input
+                            type="number"
+                            min={1}
+                            max={1440}
+                            step={1}
+                            value={form.runtime.retry_on_failure_mute_duration_minutes}
+                            onChange={(e) => setForm((prev) => ({
+                                ...prev,
+                                runtime: { ...prev.runtime, retry_on_failure_mute_duration_minutes: Number(e.target.value || 30) },
+                            }))}
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2"
+                        />
+                        <p className="text-xs text-muted-foreground">{t('settings.retryOnFailureMuteDurationHelp')}</p>
+                    </label>
+                </div>
+            </div>
         </div>
     )
 }

@@ -45,10 +45,10 @@ export default function AccountsTable({
     const [copiedId, setCopiedId] = useState(null)
     const [selected, setSelected] = useState(() => new Set())
 
-    const pageIds = useMemo(
-        () => accounts.map(acc => resolveAccountIdentifier(acc)).filter(Boolean),
-        [accounts, resolveAccountIdentifier],
-    )
+    	const pageIds = useMemo(
+		() => filteredAccounts.map(acc => resolveAccountIdentifier(acc)).filter(Boolean),
+		[filteredAccounts, resolveAccountIdentifier],
+	)
     const selectedIds = pageIds.filter(id => selected.has(id))
     const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id))
     const busy = checkingAll || testingAll
@@ -80,22 +80,16 @@ export default function AccountsTable({
         else setSelected(new Set(pageIds))
     }
 
-    const selectByStatus = (key) => {
-        if (key === 'none') {
-            setSelected(new Set())
-            return
-        }
-        if (key === 'all') {
-            setSelected(new Set(pageIds))
-            return
-        }
-        const next = new Set()
-        for (const acc of accounts) {
-            const id = resolveAccountIdentifier(acc)
-            if (id && accountHealthKey(acc) === key) next.add(id)
-        }
-        setSelected(next)
-    }
+    	const [statusFilter, setStatusFilter] = useState('')
+	
+	const filteredAccounts = useMemo(() => {
+		if (!statusFilter) return accounts
+		return accounts.filter(acc => accountHealthKey(acc) === statusFilter)
+	}, [accounts, statusFilter])
+
+	useEffect(() => {
+		setSelected(new Set())
+	}, [page, pageSize, searchQuery, statusFilter])
 
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
@@ -116,16 +110,12 @@ export default function AccountsTable({
                         className="px-3 py-1.5 text-sm bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                     />
                     <select
-                        value=""
-                        onChange={e => {
-                            if (e.target.value) selectByStatus(e.target.value)
-                        }}
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
                         disabled={busy || accounts.length === 0}
                         className="px-3 py-1.5 text-xs bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                     >
-                        <option value="" disabled>{t('accountManager.selectOnPage')}</option>
-                        <option value="all">{t('accountManager.selectAllOnPage')}</option>
-                        <option value="none">{t('accountManager.selectNone')}</option>
+                        <option value="">{t('accountManager.selectOnPage')}</option>
                         <option value="healthy">{t('accountManager.selectHealthy')}</option>
                         <option value="muted">{t('accountManager.selectMuted')}</option>
                         <option value="banned">{t('accountManager.selectBanned')}</option>
@@ -191,10 +181,10 @@ export default function AccountsTable({
                 </div>
             )}
 
-            <div className="divide-y divide-border">
+            			<div className="divide-y divide-border">
                 {loadingAccounts ? (
                     <div className="p-8 text-center text-muted-foreground">{t('actions.loading')}</div>
-                ) : accounts.length > 0 ? (
+                ) : filteredAccounts.length > 0 ? (
                     <>
                         <div className="px-4 py-2 flex items-center gap-3 bg-muted/20 text-xs text-muted-foreground">
                             <input
@@ -207,7 +197,7 @@ export default function AccountsTable({
                             />
                             <span>{t('accountManager.selectAllOnPage')}</span>
                         </div>
-                        {accounts.map((acc, i) => {
+                        {filteredAccounts.map((acc, i) => {
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
                         const runtimeUnknown = envBacked && !acc.test_status

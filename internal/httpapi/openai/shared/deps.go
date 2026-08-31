@@ -56,6 +56,8 @@ type ConfigReader interface {
 	EmptyOutputRetrySuffixText() string
 	ResponseReplacementsEnabled() bool
 	ResponseReplacementRules() []config.ResponseReplacementRule
+	RetryOnFailureMaxAttempts() int
+	RetryOnFailureMuteDurationMinutes() int
 }
 
 type Deps struct {

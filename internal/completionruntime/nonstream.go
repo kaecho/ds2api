@@ -26,12 +26,15 @@ type DeepSeekCaller interface {
 }
 
 type Options struct {
-	StripReferenceMarkers bool
-	MaxAttempts           int
-	RetryEnabled          bool
-	RetryMaxAttempts      int
-	CurrentInputFile      history.CurrentInputConfigReader
-	ResponseReplacements  []config.ResponseReplacementRule
+	StripReferenceMarkers             bool
+	MaxAttempts                       int
+	RetryEnabled                      bool
+	RetryMaxAttempts                  int
+	CurrentInputFile                  history.CurrentInputConfigReader
+	ResponseReplacements              []config.ResponseReplacementRule
+	RetryOnFailureMaxAttempts         int
+	RetryOnFailureMuteDurationMinutes int
+	MuteAccount                       func(accountID string, durationMinutes int)
 }
 
 type NonStreamResult struct {
@@ -107,6 +110,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 
 	attempts := 0
 	accountSwitchAttempted := false
+	retryOnFailureCount := 0
 	currentResp := start.Response
 	usagePrompt := stdReq.PromptTokenText
 	accumulatedThinking := ""
@@ -115,7 +119,29 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 	for {
 		turn, outErr := collectAttempt(currentResp, stdReq, usagePrompt, opts)
 		if outErr != nil {
-			if canRetryOnAlternateAccount(ctx, a, outErr, opts.RetryEnabled, &accountSwitchAttempted) {
+			if retryOnFailureCount < opts.RetryOnFailureMaxAttempts && a != nil && a.UseConfigToken {
+				retryOnFailureCount++
+				if opts.MuteAccount != nil && a.AccountID != "" {
+					opts.MuteAccount(a.AccountID, opts.RetryOnFailureMuteDurationMinutes)
+				}
+				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
+				if switchErr != nil {
+					return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, switchErr
+				}
+				if switched.Response != nil {
+					config.Logger.Info("[completion_runtime_retry_on_failure] retrying non-200 on alternate account", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", outErr.Status, "retry_attempt", retryOnFailureCount)
+					sessionID = switched.SessionID
+					payload = switched.Payload
+					pow = switched.Pow
+					currentResp = switched.Response
+					usagePrompt = stdReq.PromptTokenText
+					accumulatedThinking = ""
+					accumulatedRawThinking = ""
+					accumulatedToolDetectionThinking = ""
+					continue
+				}
+			}
+			if !accountSwitchAttempted && canRetryOnAlternateAccount(ctx, a, outErr, opts.RetryEnabled, &accountSwitchAttempted) {
 				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
 				if switchErr != nil {
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, switchErr

@@ -58,6 +58,8 @@ func (m mockResponsesConfig) ResponseReplacementsEnabled() bool {
 func (m mockResponsesConfig) ResponseReplacementRules() []config.ResponseReplacementRule {
 	return m.responseReplacementRules
 }
+func (m mockResponsesConfig) RetryOnFailureMaxAttempts() int         { return 10 }
+func (m mockResponsesConfig) RetryOnFailureMuteDurationMinutes() int { return 30 }
 
 func RegisterRoutes(r chi.Router, h *Handler) {
 	r.Post("/v1/responses", h.Responses)

@@ -22,6 +22,8 @@ func (m claudeProxyStoreStub) ResponseReplacementRules() []config.ResponseReplac
 func (claudeProxyStoreStub) AutoDeleteMode() string                                       { return "none" }
 func (claudeProxyStoreStub) ThinkingInjectionEnabled() bool                               { return false }
 func (claudeProxyStoreStub) ThinkingInjectionPrompt() string                              { return "" }
+func (claudeProxyStoreStub) RetryOnFailureMaxAttempts() int                                { return 10 }
+func (claudeProxyStoreStub) RetryOnFailureMuteDurationMinutes() int                        { return 30 }
 
 type openAIProxyStub struct {
 	status int

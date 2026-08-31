@@ -31,6 +31,8 @@ func (claudeHistoryConfig) CurrentInputFileMinChars() int                       
 func (claudeHistoryConfig) AutoDeleteMode() string                                       { return "none" }
 func (claudeHistoryConfig) ThinkingInjectionEnabled() bool                               { return false }
 func (claudeHistoryConfig) ThinkingInjectionPrompt() string                              { return "" }
+func (claudeHistoryConfig) RetryOnFailureMaxAttempts() int                                { return 10 }
+func (claudeHistoryConfig) RetryOnFailureMuteDurationMinutes() int                        { return 30 }
 
 func (claudeCurrentInputAuth) Determine(*http.Request) (*auth.RequestAuth, error) {
 	return &auth.RequestAuth{

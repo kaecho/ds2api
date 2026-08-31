@@ -23,6 +23,8 @@ func (mockClaudeConfig) CurrentInputFileMinChars() int   { return 0 }
 func (mockClaudeConfig) AutoDeleteMode() string          { return "none" }
 func (mockClaudeConfig) ThinkingInjectionEnabled() bool  { return false }
 func (mockClaudeConfig) ThinkingInjectionPrompt() string { return "" }
+func (mockClaudeConfig) RetryOnFailureMaxAttempts() int                  { return 10 }
+func (mockClaudeConfig) RetryOnFailureMuteDurationMinutes() int          { return 30 }
 
 func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	req := map[string]any{

@@ -96,6 +96,20 @@ func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *confi
 			}
 			cfg.AccountDailyLimit = &n
 		}
+		if v, exists := raw["retry_on_failure_max_attempts"]; exists {
+			n := intFrom(v)
+			if err := config.ValidateIntRange("runtime.retry_on_failure_max_attempts", n, 0, 100, true); err != nil {
+				return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, err
+			}
+			cfg.RetryOnFailureMaxAttempts = n
+		}
+		if v, exists := raw["retry_on_failure_mute_duration_minutes"]; exists {
+			n := intFrom(v)
+			if err := config.ValidateIntRange("runtime.retry_on_failure_mute_duration_minutes", n, 1, 1440, true); err != nil {
+				return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, err
+			}
+			cfg.RetryOnFailureMuteDurationMinutes = n
+		}
 		if cfg.AccountMaxInflight > 0 && cfg.GlobalMaxInflight > 0 && cfg.GlobalMaxInflight < cfg.AccountMaxInflight {
 			return nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("runtime.global_max_inflight must be >= runtime.account_max_inflight")
 		}

@@ -99,6 +99,10 @@ func (p *Pool) takeLocked(accountID string) (config.Account, bool) {
 	if p.store != nil {
 		p.store.NoteAccountUse(accountID)
 	}
+	// Bump capped accounts to tail regardless of schedule so they aren't frequently retried
+	if p.accountCappedLocked(accountID) {
+		p.bumpQueue(accountID)
+	}
 	return acc, true
 }
 

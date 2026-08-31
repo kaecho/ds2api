@@ -46,6 +46,8 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 	promptEmptyRetrySet := hasNestedSettingsKey(req, "prompt", "empty_output_retry_suffix")
 	responseReplEnabledSet := hasNestedSettingsKey(req, "response_replacements", "enabled")
 	responseReplRulesSet := hasNestedSettingsKey(req, "response_replacements", "rules")
+	retryMaxAttemptsSet := hasNestedSettingsKey(req, "runtime", "retry_on_failure_max_attempts")
+	retryMuteDurationSet := hasNestedSettingsKey(req, "runtime", "retry_on_failure_mute_duration_minutes")
 
 	responseReplacementsCfg := parseResponseReplacementsConfig(req["response_replacements"])
 
@@ -76,6 +78,12 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 			}
 			if runtimeCfg.AccountDailyLimit != nil {
 				c.Runtime.AccountDailyLimit = runtimeCfg.AccountDailyLimit
+			}
+			if retryMaxAttemptsSet {
+				c.Runtime.RetryOnFailureMaxAttempts = runtimeCfg.RetryOnFailureMaxAttempts
+			}
+			if retryMuteDurationSet {
+				c.Runtime.RetryOnFailureMuteDurationMinutes = runtimeCfg.RetryOnFailureMuteDurationMinutes
 			}
 		}
 		if responsesCfg != nil && responsesCfg.StoreTTLSeconds > 0 {

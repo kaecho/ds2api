@@ -68,11 +68,48 @@ func (h *Handler) handleNonStreamWithRetry(w http.ResponseWriter, ctx context.Co
 }
 
 func (h *Handler) handleStreamWithRetry(w http.ResponseWriter, r *http.Request, a *auth.RequestAuth, resp *http.Response, payload map[string]any, pow, completionID string, sessionIDRef *string, stdReq promptcompat.StandardRequest, model, finalPrompt string, refFileTokens int, thinkingEnabled, searchEnabled bool, toolNames []string, toolsRaw any, toolChoice promptcompat.ToolChoicePolicy, historySession *chatHistorySession) {
-	streamRuntime, initialType, ok := h.prepareChatStreamRuntime(w, resp, completionID, model, finalPrompt, refFileTokens, thinkingEnabled, searchEnabled, toolNames, toolsRaw, toolChoice, historySession)
+	// Retry on failure for non-200 responses
+	maxRetry := 0
+	muteMin := 30
+	if h != nil && h.Store != nil {
+		maxRetry = h.Store.RetryOnFailureMaxAttempts()
+		muteMin = h.Store.RetryOnFailureMuteDurationMinutes()
+	}
+	currentResp := resp
+	if a != nil && a.UseConfigToken {
+		for retryCount := 0; currentResp != nil && currentResp.StatusCode != http.StatusOK && retryCount < maxRetry; retryCount++ {
+			if a.AccountID != "" && h != nil && h.Store != nil {
+				if store, ok := h.Store.(*config.Store); ok {
+					store.UpdateAccountMuteUntil(a.AccountID, time.Now().Unix()+int64(muteMin)*60)
+				}
+			}
+			switched, switchErr := completionruntime.StartPayloadCompletionOnAlternateAccount(r.Context(), h.DS, a, payload, completionruntime.StreamRetryOptions{
+				Surface:              "chat.completions",
+				Stream:               true,
+				MaxAttempts:          3,
+				Request:              stdReq,
+				CurrentInputFile:     h.Store,
+				ResponseReplacements: h.responseReplacementRules(),
+			}, 3)
+			if switchErr != nil {
+				break
+			}
+			if switched.Response != nil {
+				if sessionIDRef != nil {
+					*sessionIDRef = switched.SessionID
+				}
+				currentResp = switched.Response
+				payload = switched.Payload
+				pow = switched.Pow
+				config.Logger.Info("[completion_runtime_retry_on_failure] retrying non-200 on alternate account (stream)", "surface", "chat.completions", "stream", true, "account", a.AccountID, "retry_attempt", retryCount+1)
+			}
+		}
+	}
+	streamRuntime, initialType, ok := h.prepareChatStreamRuntime(w, currentResp, completionID, model, finalPrompt, refFileTokens, thinkingEnabled, searchEnabled, toolNames, toolsRaw, toolChoice, historySession)
 	if !ok {
 		return
 	}
-	completionruntime.ExecuteStreamWithRetry(r.Context(), h.DS, a, resp, payload, pow, completionruntime.StreamRetryOptions{
+	completionruntime.ExecuteStreamWithRetry(r.Context(), h.DS, a, currentResp, payload, pow, completionruntime.StreamRetryOptions{
 		Surface:              "chat.completions",
 		Stream:               true,
 		RetryEnabled:         emptyOutputRetryEnabled(),

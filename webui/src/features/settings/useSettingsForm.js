@@ -12,7 +12,7 @@ const MAX_AUTO_FETCH_FAILURES = 3
 
 const DEFAULT_FORM = {
     admin: { jwt_expire_hours: 24 },
-    runtime: { account_max_inflight: 2, account_max_queue: 10, global_max_inflight: 10, token_refresh_interval_hours: 6, auto_clean_banned: false, account_schedule: 'round_robin', account_daily_limit: 0 },
+    runtime: { account_max_inflight: 2, account_max_queue: 10, global_max_inflight: 10, token_refresh_interval_hours: 6, auto_clean_banned: false, account_schedule: 'round_robin', account_daily_limit: 0, retry_on_failure_max_attempts: 10, retry_on_failure_mute_duration_minutes: 30 },
     responses: { store_ttl_seconds: 900 },
     embeddings: { provider: '' },
     auto_delete: { mode: 'none' },
@@ -77,6 +77,8 @@ function fromServerForm(data) {
             auto_clean_banned: Boolean(data.runtime?.auto_clean_banned),
             account_schedule: data.runtime?.account_schedule || 'round_robin',
             account_daily_limit: Number(data.runtime?.account_daily_limit || 0),
+            retry_on_failure_max_attempts: Number(data.runtime?.retry_on_failure_max_attempts || 10),
+            retry_on_failure_mute_duration_minutes: Number(data.runtime?.retry_on_failure_mute_duration_minutes || 30),
         },
         responses: {
             store_ttl_seconds: Number(data.responses?.store_ttl_seconds || 900),
@@ -159,6 +161,8 @@ function toServerPayload(form, baseHeaders) {
             auto_clean_banned: Boolean(form.runtime.auto_clean_banned),
             account_schedule: form.runtime.account_schedule || 'round_robin',
             account_daily_limit: Number(form.runtime.account_daily_limit || 0),
+            retry_on_failure_max_attempts: Number(form.runtime.retry_on_failure_max_attempts || 10),
+            retry_on_failure_mute_duration_minutes: Number(form.runtime.retry_on_failure_mute_duration_minutes || 30),
         },
         responses: { store_ttl_seconds: Number(form.responses.store_ttl_seconds) },
         embeddings: { provider: String(form.embeddings.provider || '').trim() },

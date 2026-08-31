@@ -16,15 +16,18 @@ import (
 )
 
 type StreamRetryOptions struct {
-	Surface              string
-	Stream               bool
-	RetryEnabled         bool
-	RetryMaxAttempts     int
-	MaxAttempts          int
-	UsagePrompt          string
-	Request              promptcompat.StandardRequest
-	CurrentInputFile     history.CurrentInputConfigReader
-	ResponseReplacements []config.ResponseReplacementRule
+	Surface                           string
+	Stream                            bool
+	RetryEnabled                      bool
+	RetryMaxAttempts                  int
+	MaxAttempts                       int
+	UsagePrompt                       string
+	Request                           promptcompat.StandardRequest
+	CurrentInputFile                  history.CurrentInputConfigReader
+	ResponseReplacements              []config.ResponseReplacementRule
+	RetryOnFailureMaxAttempts         int
+	RetryOnFailureMuteDurationMinutes int
+	MuteAccount                       func(accountID string, durationMinutes int)
 }
 
 type StreamRetryHooks struct {
@@ -85,7 +88,7 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 
 		if attempts >= retryMax {
 			if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusServiceUnavailable}, opts.RetryEnabled, &accountSwitchAttempted) {
-				switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
+				switched, switchErr := StartPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
 				if switchErr != nil {
 					if hooks.OnRetryFailure != nil {
 						hooks.OnRetryFailure(switchErr.Status, switchErr.Message, switchErr.Code)
@@ -164,7 +167,7 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 	}
 }
 
-func startPayloadCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, payload map[string]any, opts StreamRetryOptions, maxAttempts int) (StartResult, *assistantturn.OutputError) {
+func StartPayloadCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, payload map[string]any, opts StreamRetryOptions, maxAttempts int) (StartResult, *assistantturn.OutputError) {
 	sessionID, err := ds.CreateSession(ctx, a, maxAttempts)
 	if err != nil {
 		return StartResult{}, authOutputError(a)

@@ -157,13 +157,15 @@ type AdminConfig struct {
 }
 
 type RuntimeConfig struct {
-	AccountMaxInflight        int    `json:"account_max_inflight,omitempty"`
-	AccountMaxQueue           int    `json:"account_max_queue,omitempty"`
-	GlobalMaxInflight         int    `json:"global_max_inflight,omitempty"`
-	TokenRefreshIntervalHours int    `json:"token_refresh_interval_hours,omitempty"`
-	AutoCleanBanned           *bool  `json:"auto_clean_banned,omitempty"`
-	AccountSchedule           string `json:"account_schedule,omitempty"`
-	AccountDailyLimit         *int   `json:"account_daily_limit,omitempty"`
+	AccountMaxInflight                int    `json:"account_max_inflight,omitempty"`
+	AccountMaxQueue                   int    `json:"account_max_queue,omitempty"`
+	GlobalMaxInflight                 int    `json:"global_max_inflight,omitempty"`
+	TokenRefreshIntervalHours         int    `json:"token_refresh_interval_hours,omitempty"`
+	AutoCleanBanned                   *bool  `json:"auto_clean_banned,omitempty"`
+	AccountSchedule                   string `json:"account_schedule,omitempty"`
+	AccountDailyLimit                 *int   `json:"account_daily_limit,omitempty"`
+	RetryOnFailureMaxAttempts         int    `json:"retry_on_failure_max_attempts,omitempty"`
+	RetryOnFailureMuteDurationMinutes int    `json:"retry_on_failure_mute_duration_minutes,omitempty"`
 }
 
 type ResponsesConfig struct {

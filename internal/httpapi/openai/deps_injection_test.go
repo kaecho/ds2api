@@ -61,6 +61,8 @@ func (m mockOpenAIConfig) ResponseReplacementsEnabled() bool { return m.response
 func (m mockOpenAIConfig) ResponseReplacementRules() []config.ResponseReplacementRule {
 	return m.responseReplacementRules
 }
+func (m mockOpenAIConfig) RetryOnFailureMaxAttempts() int { return 10 }
+func (m mockOpenAIConfig) RetryOnFailureMuteDurationMinutes() int { return 30 }
 
 func TestNormalizeOpenAIChatRequestWithConfigInterface(t *testing.T) {
 	cfg := mockOpenAIConfig{

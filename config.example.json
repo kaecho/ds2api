@@ -75,7 +75,9 @@
     "global_max_inflight": 0,
     "token_refresh_interval_hours": 6,
     "account_schedule": "round_robin",
-    "account_daily_limit": 0
+    "account_daily_limit": 0,
+    "retry_on_failure_max_attempts": 10,
+    "retry_on_failure_mute_duration_minutes": 30
   },
   "auto_delete": {
     "mode": "none"

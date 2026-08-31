@@ -159,6 +159,26 @@ func (s *Store) RuntimeAccountDailyLimit() int {
 	return *s.cfg.Runtime.AccountDailyLimit
 }
 
+func (s *Store) RetryOnFailureMaxAttempts() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	n := s.cfg.Runtime.RetryOnFailureMaxAttempts
+	if n <= 0 {
+		return 10
+	}
+	return n
+}
+
+func (s *Store) RetryOnFailureMuteDurationMinutes() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	n := s.cfg.Runtime.RetryOnFailureMuteDurationMinutes
+	if n <= 0 {
+		return 30
+	}
+	return n
+}
+
 // RuntimeAutoCleanBanned returns whether banned accounts should be automatically
 // removed from the pool when detected during token refresh.
 func (s *Store) RuntimeAutoCleanBanned() bool {
