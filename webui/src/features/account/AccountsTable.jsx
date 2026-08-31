@@ -44,11 +44,17 @@ export default function AccountsTable({
 }) {
     const [copiedId, setCopiedId] = useState(null)
     const [selected, setSelected] = useState(() => new Set())
+    const [statusFilter, setStatusFilter] = useState('')
 
-    	const pageIds = useMemo(
-		() => filteredAccounts.map(acc => resolveAccountIdentifier(acc)).filter(Boolean),
-		[filteredAccounts, resolveAccountIdentifier],
-	)
+    const filteredAccounts = useMemo(() => {
+        if (!statusFilter) return accounts
+        return accounts.filter(acc => accountHealthKey(acc) === statusFilter)
+    }, [accounts, statusFilter])
+
+    const pageIds = useMemo(
+        () => filteredAccounts.map(acc => resolveAccountIdentifier(acc)).filter(Boolean),
+        [filteredAccounts, resolveAccountIdentifier],
+    )
     const selectedIds = pageIds.filter(id => selected.has(id))
     const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id))
     const busy = checkingAll || testingAll
@@ -56,7 +62,7 @@ export default function AccountsTable({
 
     useEffect(() => {
         setSelected(new Set())
-    }, [page, pageSize, searchQuery])
+    }, [page, pageSize, searchQuery, statusFilter])
 
     const copyId = (id) => {
         navigator.clipboard.writeText(id).then(() => {
@@ -79,17 +85,6 @@ export default function AccountsTable({
         if (allPageSelected) setSelected(new Set())
         else setSelected(new Set(pageIds))
     }
-
-    	const [statusFilter, setStatusFilter] = useState('')
-	
-	const filteredAccounts = useMemo(() => {
-		if (!statusFilter) return accounts
-		return accounts.filter(acc => accountHealthKey(acc) === statusFilter)
-	}, [accounts, statusFilter])
-
-	useEffect(() => {
-		setSelected(new Set())
-	}, [page, pageSize, searchQuery, statusFilter])
 
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
