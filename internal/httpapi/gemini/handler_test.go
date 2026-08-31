@@ -27,8 +27,8 @@ func (testGeminiConfig) CurrentInputFileEnabled() bool                          
 func (testGeminiConfig) CurrentInputFileMinChars() int                              { return 0 }
 func (testGeminiConfig) ResponseReplacementsEnabled() bool                          { return false }
 func (testGeminiConfig) ResponseReplacementRules() []config.ResponseReplacementRule { return nil }
-func (testGeminiConfig) RetryOnFailureMaxAttempts() int                              { return 10 }
-func (testGeminiConfig) RetryOnFailureMuteDurationMinutes() int                      { return 30 }
+func (testGeminiConfig) RetryOnFailureMaxAttempts() int                             { return 10 }
+func (testGeminiConfig) RetryOnFailureMuteDurationMinutes() int                     { return 30 }
 
 type testGeminiAuth struct {
 	a   *auth.RequestAuth

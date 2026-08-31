@@ -30,11 +30,11 @@ func (m streamStatusClaudeStoreStub) ResponseReplacementsEnabled() bool { return
 func (m streamStatusClaudeStoreStub) ResponseReplacementRules() []config.ResponseReplacementRule {
 	return nil
 }
-func (streamStatusClaudeStoreStub) AutoDeleteMode() string          { return "none" }
-func (streamStatusClaudeStoreStub) ThinkingInjectionEnabled() bool  { return false }
-func (streamStatusClaudeStoreStub) ThinkingInjectionPrompt() string { return "" }
-func (streamStatusClaudeStoreStub) RetryOnFailureMaxAttempts() int               { return 10 }
-func (streamStatusClaudeStoreStub) RetryOnFailureMuteDurationMinutes() int       { return 30 }
+func (streamStatusClaudeStoreStub) AutoDeleteMode() string                 { return "none" }
+func (streamStatusClaudeStoreStub) ThinkingInjectionEnabled() bool         { return false }
+func (streamStatusClaudeStoreStub) ThinkingInjectionPrompt() string        { return "" }
+func (streamStatusClaudeStoreStub) RetryOnFailureMaxAttempts() int         { return 10 }
+func (streamStatusClaudeStoreStub) RetryOnFailureMuteDurationMinutes() int { return 30 }
 
 func captureClaudeStatusMiddleware(statuses *[]int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

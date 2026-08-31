@@ -64,7 +64,7 @@ func (m mockOpenAIConfig) ResponseReplacementsEnabled() bool        { return m.r
 func (m mockOpenAIConfig) ResponseReplacementRules() []config.ResponseReplacementRule {
 	return m.responseReplacementRules
 }
-func (m mockOpenAIConfig) RetryOnFailureMaxAttempts() int          { return 10 }
+func (m mockOpenAIConfig) RetryOnFailureMaxAttempts() int         { return 10 }
 func (m mockOpenAIConfig) RetryOnFailureMuteDurationMinutes() int { return 30 }
 
 type streamStatusAuthStub struct{}
@@ -130,8 +130,8 @@ func (m streamStatusDSStub) DeleteAllSessionsForToken(_ context.Context, _ strin
 	return nil
 }
 
-func (m streamStatusDSStub) RetryOnFailureMaxAttempts() int                            { return 10 }
-func (m streamStatusDSStub) RetryOnFailureMuteDurationMinutes() int                   { return 30 }
+func (m streamStatusDSStub) RetryOnFailureMaxAttempts() int         { return 10 }
+func (m streamStatusDSStub) RetryOnFailureMuteDurationMinutes() int { return 30 }
 
 func makeOpenAISSEHTTPResponse(lines ...string) *http.Response {
 	body := strings.Join(lines, "\n")
