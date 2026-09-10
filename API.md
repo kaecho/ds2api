@@ -4,7 +4,7 @@
 
 本文档描述当前 Go 代码库的实际 API 行为。
 
-文档导航：[总览](README.MD) / [架构说明](docs/ARCHITECTURE.md) / [部署指南](docs/DEPLOY.md) / [测试指南](docs/TESTING.md)
+文档导航：[总览](docs/overview.md) / [架构说明](docs/ARCHITECTURE.md) / [部署指南](docs/DEPLOY.md) / [测试指南](docs/TESTING.md)
 
 ---
 

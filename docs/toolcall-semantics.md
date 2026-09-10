@@ -2,7 +2,7 @@
 
 本文档描述当前代码中的**实际行为**，以 `internal/toolcall`、`internal/toolstream` 与 `internal/js/helpers/stream-tool-sieve` 为准。
 
-文档导航：[总览](../README.MD) / [架构说明](./ARCHITECTURE.md) / [测试指南](./TESTING.md)
+文档导航：[总览](./overview.md) / [架构说明](./ARCHITECTURE.md) / [测试指南](./TESTING.md)
 
 ## 1) 当前可执行格式
 

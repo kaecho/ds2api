@@ -1,24 +1,24 @@
 <p align="center">
-  <img src="webui/public/ds2api-favicon.svg" width="128" height="128" alt="DS2API icon" />
+  <img src="../webui/public/ds2api-favicon.svg" width="128" height="128" alt="DS2API icon" />
 </p>
 
 # DS2API
 
 <a href="https://trendshift.io/repositories/24508" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24508" alt="CJackHwang%2Fds2api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[![License](https://img.shields.io/github/license/CJackHwang/ds2api.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/CJackHwang/ds2api.svg)](../LICENSE)
 ![Stars](https://img.shields.io/github/stars/CJackHwang/ds2api.svg)
 ![Forks](https://img.shields.io/github/forks/CJackHwang/ds2api.svg)
 [![Release](https://img.shields.io/github/v/release/CJackHwang/ds2api?display_name=tag)](https://github.com/CJackHwang/ds2api/releases)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docs/DEPLOY.en.md)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](DEPLOY.en.md)
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/L4CFHP)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/CJackHwang/ds2api)
 
-Language: [中文](README.MD) | [English](README.en.md)
+Language: [中文](overview.md) | [English](overview.en.md)
 
 DS2API converts DeepSeek Web chat capability into OpenAI-compatible, Claude-compatible, and Gemini-compatible APIs. The core backend is Go-based, with a small Node Runtime bridge used for Vercel streaming, and the React WebUI admin panel lives in `webui/` (build output auto-generated to `static/admin` during deployment).
 
-Documentation entry: [Docs Index](docs/README.md) / [Architecture](docs/ARCHITECTURE.en.md) / [API Reference](API.en.md)
+Documentation entry: [Docs Index](README.md) / [Architecture](ARCHITECTURE.en.md) / [API Reference](../API.en.md)
 
 ## Star History
 
@@ -118,7 +118,7 @@ flowchart LR
     Vercel --> Client
 ```
 
-For the full module-by-module architecture and directory responsibilities, see [docs/ARCHITECTURE.en.md](docs/ARCHITECTURE.en.md).
+For the full module-by-module architecture and directory responsibilities, see [docs/ARCHITECTURE.en.md](ARCHITECTURE.en.md).
 
 - **Backend**: Go (`cmd/ds2api/`, `api/`, `internal/`), no Python runtime
 - **Frontend**: React admin panel (`webui/`), served as static build at runtime
@@ -166,7 +166,7 @@ OpenAI `/v1/*` routes remain canonical, and DS2API also accepts root shortcuts s
 | expert | `deepseek-v4-pro-search` | enabled by default, request-controlled | ✅ |
 | vision | `deepseek-v4-vision` | enabled by default, request-controlled | ❌ |
 
-Besides native IDs, DS2API also accepts common aliases as input (for example `gpt-4.1`, `gpt-5`, `gpt-5-codex`, `o3`, `claude-*`, `gemini-*`), but `/v1/models` returns normalized DeepSeek native model IDs. The complete alias behavior is documented in [API.en.md](API.en.md#model-alias-resolution) and `config.example.json`.
+Besides native IDs, DS2API also accepts common aliases as input (for example `gpt-4.1`, `gpt-5`, `gpt-5-codex`, `o3`, `claude-*`, `gemini-*`), but `/v1/models` returns normalized DeepSeek native model IDs. The complete alias behavior is documented in [API.en.md](../API.en.md#model-alias-resolution) and `config.example.json`.
 Current upstream vision support exposes only the `vision` lane and does not provide a separate search-enabled vision variant.
 
 ### Claude Endpoint (`GET /anthropic/v1/models`)
@@ -260,7 +260,7 @@ Rebuild after updates: `docker-compose up -d --build`
 
 Fresh Zeabur volumes can start without `/data/config.json`; DS2API will boot with an empty file-backed config and create the file on the first Admin UI save.
 
-For manual deployment without the template, create a Zeabur GitHub service, keep Root Directory as `/`, build with the repo-root `Dockerfile`, mount a persistent volume at `/data`, set `PORT=5001`, `DS2API_ADMIN_KEY=your-strong-secret`, and `DS2API_CONFIG_PATH=/data/config.json`, then expose HTTP port `5001`. See [docs/DEPLOY.en.md](docs/DEPLOY.en.md#manual-deployment-without-the-template) for the full guide.
+For manual deployment without the template, create a Zeabur GitHub service, keep Root Directory as `/`, build with the repo-root `Dockerfile`, mount a persistent volume at `/data`, set `PORT=5001`, `DS2API_ADMIN_KEY=your-strong-secret`, and `DS2API_CONFIG_PATH=/data/config.json`, then expose HTTP port `5001`. See [DEPLOY.en.md](DEPLOY.en.md#manual-deployment-without-the-template) for the full guide.
 
 Note: when Zeabur builds directly from the repo `Dockerfile`, you do not need to pass `BUILD_VERSION`. The image prefers that build arg when provided, and automatically falls back to the repo-root `VERSION` file when it is absent.
 
@@ -286,7 +286,7 @@ base64 < config.json | tr -d '\n'
 
 > **Streaming note**: OpenAI Chat streaming on Vercel is routed to `api/chat-stream.js` (Node Runtime), but `vercel.json` rewrites only the canonical `/v1/chat/completions` path to Node; the root shortcut `/chat/completions` stays on the Go main path. Auth, account selection, and session/PoW preparation are still handled by the Go internal prepare endpoint; streaming output (including `tools`) is assembled on Node with Go-aligned anti-leak handling. Use `/v1/chat/completions` on Vercel when real-time streaming is required.
 
-For detailed deployment instructions, see the [Deployment Guide](docs/DEPLOY.en.md).
+For detailed deployment instructions, see the [Deployment Guide](DEPLOY.en.md).
 
 ### Option 4: Local Run
 
@@ -313,7 +313,7 @@ The server actually binds to `0.0.0.0:5001`, so devices on the same LAN can usua
 
 ## Configuration
 
-`README` keeps only the onboarding path. Use [config.example.json](config.example.json) as the field template, and see the [deployment guide](docs/DEPLOY.en.md#0-prerequisites) plus [API configuration notes](API.en.md#configuration-best-practice) for full details.
+`README` keeps only the onboarding path. Use [config.example.json](../config.example.json) as the field template, and see the [deployment guide](DEPLOY.en.md#0-prerequisites) plus [API configuration notes](../API.en.md#configuration-best-practice) for full details.
 
 Common fields:
 
@@ -325,7 +325,7 @@ Common fields:
 - `current_input_file`: the global context split/upload mode; it is enabled by default and uploads the full context as a `DS2API_HISTORY.txt` context file once the character threshold is reached.
 - If you turn off `current_input_file`, requests pass through directly without uploading any split context file.
 
-For the full environment variable list, see [docs/DEPLOY.en.md](docs/DEPLOY.en.md). For auth behavior, see [API.en.md](API.en.md#authentication).
+For the full environment variable list, see [DEPLOY.en.md](DEPLOY.en.md). For auth behavior, see [API.en.md](../API.en.md#authentication).
 
 ## Authentication Modes
 
@@ -402,14 +402,14 @@ The save endpoint can target a chain by `query`, `chain_key`, or `capture_id`. E
 
 | Document | Description |
 | --- | --- |
-| [API.md](API.md) / [API.en.md](API.en.md) | API reference with request/response examples |
-| [DEPLOY.md](docs/DEPLOY.md) / [DEPLOY.en.md](docs/DEPLOY.en.md) | Deployment guide (local/Docker/Vercel/systemd) |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) / [CONTRIBUTING.en.md](docs/CONTRIBUTING.en.md) | Contributing guide |
-| [TESTING.md](docs/TESTING.md) | Testsuite guide |
+| [API.md](../API.md) / [API.en.md](../API.en.md) | API reference with request/response examples |
+| [DEPLOY.md](DEPLOY.md) / [DEPLOY.en.md](DEPLOY.en.md) | Deployment guide (local/Docker/Vercel/systemd) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) / [CONTRIBUTING.en.md](CONTRIBUTING.en.md) | Contributing guide |
+| [TESTING.md](TESTING.md) | Testsuite guide |
 
 ## Testing
 
-For the full testing guide, see [docs/TESTING.md](docs/TESTING.md).
+For the full testing guide, see [TESTING.md](TESTING.md).
 
 Quick commands:
 

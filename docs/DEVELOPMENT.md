@@ -46,6 +46,7 @@ gofmt -w <changed-go-files>
 | API 请求归一到网页纯文本上下文 | `internal/promptcompat`、`docs/prompt-compatibility.md` |
 | 工具调用解析与流式防泄漏 | `internal/toolcall`、`internal/toolstream`、`docs/toolcall-semantics.md` |
 | DeepSeek 上游调用、登录、PoW、代理 | `internal/deepseek/client`、`internal/deepseek/transport` |
+| Android 客户端身份 / 数美 SMID / model_type | `internal/deepseek/protocol`、`internal/deepseek/smid`、`docs/DeepSeekAndroid客户端逆向-2026-09-10.md` |
 | 账号池、并发槽位、等待队列 | `internal/account` |
 | Admin API | `internal/httpapi/admin` |
 | WebUI 页面 | `webui/src/layout/DashboardShell.jsx`、`webui/src/features/*` |
@@ -58,6 +59,7 @@ gofmt -w <changed-go-files>
 - 改 tool call 语义时，同时检查 Go、Node sieve 和 `docs/toolcall-semantics.md`。
 - 改 WebUI 配置项时，同时检查 `webui/src/features/settings`、语言包和 `config.example.json`。
 - 拆分大文件时，保持对外函数签名稳定，并跑 `./tests/scripts/check-refactor-line-gate.sh`。
+- 改项目总览/快速开始时，改 `docs/overview.md` / `docs/overview.en.md`。仓库根目录 `README.md` 只保留入口链接。
 
 ## 4. 故障定位
 

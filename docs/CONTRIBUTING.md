@@ -102,6 +102,7 @@ npm run build --prefix webui
 为避免与其他文档重复维护，目录结构与模块职责已迁移到：
 
 - [docs/ARCHITECTURE.md](./ARCHITECTURE.md)
+- [docs/overview.md](./overview.md)
 - [docs/README.md](./README.md)
 
 贡献前建议先阅读架构文档中的“请求主链路”和 `internal/` 模块职责，再定位改动范围。

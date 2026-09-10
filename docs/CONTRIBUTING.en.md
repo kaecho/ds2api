@@ -102,6 +102,7 @@ npm run build --prefix webui
 To avoid documentation drift, directory layout and module responsibilities were moved to:
 
 - [docs/ARCHITECTURE.en.md](./ARCHITECTURE.en.md)
+- [docs/overview.en.md](./overview.en.md)
 - [docs/README.md](./README.md)
 
 Before contributing, review the architecture doc sections for request flow and `internal/` module boundaries.

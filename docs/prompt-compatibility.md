@@ -1,6 +1,6 @@
 # API -> 网页对话纯文本兼容主链路说明
 
-文档导航：[总览](../README.MD) / [架构说明](./ARCHITECTURE.md) / [接口文档](../API.md) / [测试指南](./TESTING.md)
+文档导航：[总览](./overview.md) / [架构说明](./ARCHITECTURE.md) / [接口文档](../API.md) / [测试指南](./TESTING.md)
 
 > 本文档是 DS2API“把 OpenAI / Claude / Gemini 风格 API 请求兼容成 DeepSeek 网页对话纯文本上下文”的专项说明。
 > 这是项目最重要的兼容产物之一。凡是修改消息标准化、tool prompt 注入、tool history 保留、文件引用、current input file、下游 completion payload 组装等行为，都必须同步更新本文档。
@@ -107,6 +107,7 @@ DS2API 当前的核心思路，不是把客户端传来的 `messages`、`tools`�
 - `tools` 不会作为“原生工具 schema”直接下发给下游，而是被改写进 `prompt`。
 - 对外返回给客户端的 `prompt_tokens` / `input_tokens` / `promptTokenCount` 不再按“最后一条消息”或字符粗估近似返回，而是基于**完整上下文 prompt**做 tokenizer 计数；为了避免上下文实际超限但客户端误以为还能塞下，请求侧上下文 token 会额外保守上浮一点，宁可略大也不低估。
 - 当前 `/v1/chat/completions` 业务路径仍是“每次请求新建一个远端 `chat_session_id`，并默认发送 `parent_message_id: null`”；因此 DS2API 对外默认表现为“新会话 + prompt 拼历史”，而不是复用 DeepSeek 原生会话树。
+- 公开模型名到线协议 `model_type` 的映射仍是 flash→`default`、pro→`expert`、vision→`vision`。官方 App 2.4.5 首页不再选档，但 completion 仍带这个字段。同一 `chat_session_id` 以**第一条 completion** 的 `model_type` 绑定，后续覆盖无效。细节见 [Android 2.4.5 客户端逆向](./DeepSeekAndroid客户端逆向-2026-09-10.md)。
 - 但 DeepSeek 远端本身支持同一 `chat_session_id` 的跨轮次持续对话。2026-04-27 已用项目内现有 DeepSeek client 做过一次不改业务代码的双轮实测：同一 `chat_session_id` 下，第 1 轮返回 `request_message_id=1` / `response_message_id=2` / 文本 `SESSION_TEST_ONE`；第 2 轮重新获取一次 PoW，并发送 `parent_message_id=2` 后，成功返回 `request_message_id=3` / `response_message_id=4` / 文本 `SESSION_TEST_TWO`。这说明“同远端会话持续聊天”能力存在，且每轮需要携带正确的 parent/message 链接信息，同时重新获取对应轮次可用的 PoW。
 - OpenAI Chat / Responses 原生走统一 OpenAI 标准化与 DeepSeek payload 组装；Claude / Gemini 会尽量复用 OpenAI prompt/tool 语义，其中 Gemini 直接复用 `promptcompat.BuildOpenAIPromptForAdapter`。Go 主服务新增 `completionruntime` 启动层，统一执行 DeepSeek session/PoW/call；输出侧新增 `assistantturn` 语义层：非流式 OpenAI Chat / Responses / Claude / Gemini 会把 DeepSeek SSE 收集结果先归一成同一份 assistant turn，再分别渲染成各协议原生外形；流式 OpenAI Chat / Responses / Claude / Gemini 继续保持各协议实时 SSE framing，但最终收尾的 tool fallback、schema 归一、usage、empty-output / content-filter 错误语义同样由 `assistantturn` 判定。Claude / Gemini 的常规 Go 主路径不再依赖内部 `httptest` 转发到 OpenAI handler；`translatorcliproxy` 仅保留用于 Vercel bridge、后端缺失 fallback 和回归测试，不作为主业务协议转换中心。
 - Vercel Node 流式路径本轮不迁移，仍使用现有 Node bridge / stream-tool-sieve 实现；后续若变更 Node 流式语义，需要按 `assistantturn` 的 Go canonical 输出语义同步对齐。
@@ -265,7 +266,7 @@ OpenAI 的文件上传现在不再是“只传文件本体”的通用路径，�
 - Chat / Responses 的 inline 图片、附件上传
 - current input file 触发时生成的 `DS2API_HISTORY.txt` 上下文文件
 
-也就是说，文件上传和完成请求的 `model_type` 现在是一致的：完成 payload 里仍然是 `model_type`，上传文件则会在 DeepSeek 上传阶段携带同样的模型类型信息。
+也就是说，文件上传和完成请求的 `model_type` 现在是一致的：完成 payload 里仍然是 `model_type`，上传文件则会在 DeepSeek 上传阶段携带同样的模型类型信息。同一远端会话以第一条 completion 的 `model_type` 绑定，后续改档无效；ds2api 每次新建会话，按请求模型写入 `expert` / `vision` 仍然打到对应档。
 
 结论：
 

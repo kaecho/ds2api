@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="webui/public/ds2api-favicon.svg" width="128" height="128" alt="DS2API icon" />
+  <img src="../webui/public/ds2api-favicon.svg" width="128" height="128" alt="DS2API icon" />
 </p>
 
 # DS2API
 
 <a href="https://trendshift.io/repositories/24508" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24508" alt="CJackHwang%2Fds2api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[![License](https://img.shields.io/github/license/CJackHwang/ds2api.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/CJackHwang/ds2api.svg)](../LICENSE)
 ![Stars](https://img.shields.io/github/stars/CJackHwang/ds2api.svg)
 ![Forks](https://img.shields.io/github/forks/CJackHwang/ds2api.svg)
 [![Release](https://img.shields.io/github/v/release/CJackHwang/ds2api?display_name=tag)](https://github.com/CJackHwang/ds2api/releases)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docs/DEPLOY.md)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](DEPLOY.md)
 
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/L4CFHP)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/CJackHwang/ds2api)
 
-语言 / Language: [中文](README.MD) | [English](README.en.md)
+语言 / Language: [中文](overview.md) | [English](overview.en.md)
 
 将 DeepSeek Web 对话能力转换为 OpenAI、Claude 与 Gemini 兼容 API。核心后端以 **Go** 实现，Vercel 流式桥接额外使用少量 Node Runtime，前端为 React WebUI 管理台（源码在 `webui/`，部署时自动构建到 `static/admin`）。
 
-文档入口：[文档导航](docs/README.md) / [架构说明](docs/ARCHITECTURE.md) / [接口文档](API.md)
+文档入口：[文档导航](README.md) / [架构说明](ARCHITECTURE.md) / [接口文档](../API.md)
 
 【感谢Linux.do社区及GitHub社区各位开发者对项目的支持与贡献】
 
@@ -121,7 +121,7 @@ flowchart LR
     Vercel --> Client
 ```
 
-详细架构拆分与目录职责见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+详细架构拆分与目录职责见 [docs/ARCHITECTURE.md](ARCHITECTURE.md)。
 
 - **后端**：Go（`cmd/ds2api/`、`api/`、`internal/`），不依赖 Python 运行时
 - **前端**：React 管理台（`webui/`），运行时托管静态构建产物
@@ -174,7 +174,7 @@ OpenAI `/v1/*` 仍是推荐的规范路径；同时支持 `/models`、`/chat/com
 | vision | `deepseek-v4-vision` | 默认开启，可由请求参数控制 | ❌ |
 | vision | `deepseek-v4-vision-nothinking` | 永久关闭，不受请求参数影响 | ❌ |
 
-除原生模型外，也支持常见 alias 输入（如 `gpt-4.1`、`gpt-5`、`gpt-5-codex`、`o3`、`claude-*`、`gemini-*` 等），但 `/v1/models` 返回的是规范化后的 DeepSeek 原生模型 ID。若 alias 名本身追加 `-nothinking` 后缀，也会映射到对应的强制关思考模型。完整 alias 行为以 [API.md](API.md#模型-alias-解析策略) 和 `config.example.json` 为准。
+除原生模型外，也支持常见 alias 输入（如 `gpt-4.1`、`gpt-5`、`gpt-5-codex`、`o3`、`claude-*`、`gemini-*` 等），但 `/v1/models` 返回的是规范化后的 DeepSeek 原生模型 ID。若 alias 名本身追加 `-nothinking` 后缀，也会映射到对应的强制关思考模型。完整 alias 行为以 [API.md](../API.md#模型-alias-解析策略) 和 `config.example.json` 为准。
 当前上游视觉模型只暴露 `vision` 通道，不提供独立的联网搜索视觉变体。
 
 ### Claude 接口（`GET /anthropic/v1/models`）
@@ -272,7 +272,7 @@ docker-compose logs -f
 
 Zeabur 首次空卷启动时可以没有 `/data/config.json`；DS2API 会先使用空的文件模式配置启动，并在管理台首次保存时创建该文件。
 
-不依赖模板手动部署时，在 Zeabur 中选择 GitHub 仓库服务，Root Directory 保持 `/`，使用仓库根目录 `Dockerfile` 构建；添加持久卷 `/data`，设置 `PORT=5001`、`DS2API_ADMIN_KEY=你的强密钥`、`DS2API_CONFIG_PATH=/data/config.json`，然后暴露 HTTP 端口 `5001`。更完整步骤见 [docs/DEPLOY.md](docs/DEPLOY.md#不使用模板手动部署)。
+不依赖模板手动部署时，在 Zeabur 中选择 GitHub 仓库服务，Root Directory 保持 `/`，使用仓库根目录 `Dockerfile` 构建；添加持久卷 `/data`，设置 `PORT=5001`、`DS2API_ADMIN_KEY=你的强密钥`、`DS2API_CONFIG_PATH=/data/config.json`，然后暴露 HTTP 端口 `5001`。更完整步骤见 [DEPLOY.md](DEPLOY.md#不使用模板手动部署)。
 
 说明：Zeabur 使用仓库内 `Dockerfile` 直接构建时，不需要额外传入 `BUILD_VERSION`；镜像会优先读取该构建参数，未提供时自动回退到仓库根目录的 `VERSION` 文件。
 
@@ -298,7 +298,7 @@ base64 < config.json | tr -d '\n'
 
 > **流式说明**：OpenAI Chat 流式在 Vercel 上会由 `api/chat-stream.js`（Node Runtime）承接，但 `vercel.json` 只把规范路径 `/v1/chat/completions` 重写到 Node；根路径快捷别名 `/chat/completions` 仍走 Go 主链路。鉴权、账号选择、会话/PoW 准备仍由 Go 内部 prepare 接口完成；流式响应（含 `tools`）在 Node 侧执行与 Go 对齐的输出组装与防泄漏处理。Vercel 上需要实时流式时请使用 `/v1/chat/completions`。
 
-详细部署说明请参阅 [部署指南](docs/DEPLOY.md)。
+详细部署说明请参阅 [部署指南](DEPLOY.md)。
 
 ### 方式四：本地源码运行
 
@@ -325,7 +325,7 @@ go run ./cmd/ds2api
 
 ## 配置说明
 
-`README` 只保留快速入口，完整字段请以 [config.example.json](config.example.json) 为模板，并参考 [部署指南](docs/DEPLOY.md#0-前置要求) 与 [API 配置最佳实践](API.md#配置最佳实践)。
+`README` 只保留快速入口，完整字段请以 [config.example.json](../config.example.json) 为模板，并参考 [部署指南](DEPLOY.md#0-前置要求) 与 [API 配置最佳实践](../API.md#配置最佳实践)。
 
 常用字段：
 
@@ -338,7 +338,7 @@ go run ./cmd/ds2api
 - 如果关闭 `current_input_file`，请求会直接透传，不上传拆分上下文文件。
 - `thinking_injection`：默认开启；在最新 user 消息末尾追加思考增强提示词，提高高强度推理与工具调用前的思考稳定性；`prompt` 留空时使用内置默认提示词。
 
-环境变量完整列表见 [部署指南](docs/DEPLOY.md)，接口鉴权规则见 [API.md](API.md#鉴权规则)。
+环境变量完整列表见 [部署指南](DEPLOY.md)，接口鉴权规则见 [API.md](../API.md#鉴权规则)。
 
 ## 鉴权模式
 
@@ -418,14 +418,14 @@ go run ./cmd/ds2api
 
 | 文档 | 说明 |
 | --- | --- |
-| [API.md](API.md) / [API.en.md](API.en.md) | API 接口文档（含请求/响应示例） |
-| [DEPLOY.md](docs/DEPLOY.md) / [DEPLOY.en.md](docs/DEPLOY.en.md) | 部署指南（本地/Docker/Vercel/systemd） |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) / [CONTRIBUTING.en.md](docs/CONTRIBUTING.en.md) | 贡献指南 |
-| [TESTING.md](docs/TESTING.md) | 测试集使用指南 |
+| [API.md](../API.md) / [API.en.md](../API.en.md) | API 接口文档（含请求/响应示例） |
+| [DEPLOY.md](DEPLOY.md) / [DEPLOY.en.md](DEPLOY.en.md) | 部署指南（本地/Docker/Vercel/systemd） |
+| [CONTRIBUTING.md](CONTRIBUTING.md) / [CONTRIBUTING.en.md](CONTRIBUTING.en.md) | 贡献指南 |
+| [TESTING.md](TESTING.md) | 测试集使用指南 |
 
 ## 测试
 
-详细测试指南请参阅 [docs/TESTING.md](docs/TESTING.md)。
+详细测试指南请参阅 [TESTING.md](TESTING.md)。
 
 ### 快速测试命令
 

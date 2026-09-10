@@ -79,7 +79,7 @@ Each archive includes:
 - `ds2api` executable (`ds2api.exe` on Windows)
 - `static/admin/` (built WebUI assets)
 - `config.example.json`, `.env.example`
-- `README.MD`, `README.en.md`, `LICENSE`
+- `README.MD` and `README.en.md` copied from `docs/overview.md` / `docs/overview.en.md`, plus `LICENSE`
 
 ### Usage
 

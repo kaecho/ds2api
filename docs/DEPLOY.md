@@ -79,7 +79,7 @@ cp config.example.json config.json
 - `ds2api` 可执行文件（Windows 为 `ds2api.exe`）
 - `static/admin/`（WebUI 构建产物）
 - `config.example.json`、`.env.example`
-- `README.MD`、`README.en.md`、`LICENSE`
+- 从 `docs/overview.md` / `docs/overview.en.md` 复制出的 `README.MD`、`README.en.md`、`LICENSE`
 
 ### 使用步骤
 

@@ -1,6 +1,6 @@
 # DS2API 项目价值说明
 
-文档导航：[总览](../README.MD) / [文档索引](./README.md) / [接口文档](../API.md) / [兼容主链路](./prompt-compatibility.md) / [Tool Calling 语义](./toolcall-semantics.md)
+文档导航：[总览](./overview.md) / [文档索引](./README.md) / [接口文档](../API.md) / [兼容主链路](./prompt-compatibility.md) / [Tool Calling 语义](./toolcall-semantics.md)
 
 > 本文用于说明 DS2API 的项目定位与长期价值。
 > 它不是架构说明，也不是功能清单，而是从“网页能力如何稳定 API 化”这个角度解释本项目为什么成立。
