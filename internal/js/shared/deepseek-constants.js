@@ -6,15 +6,16 @@ const path = require('path');
 const DEFAULT_CLIENT = Object.freeze({
   name: 'DeepSeek',
   platform: 'android',
-  androidApiLevel: '30',
+  androidApiLevel: '35',
   locale: 'zh_CN',
+  bundleId: 'com.deepseek.chat',
+  timezoneOffsetSeconds: '28800',
 });
 
 const DEFAULT_BASE_HEADERS = Object.freeze({
   Host: 'chat.deepseek.com',
   Accept: 'application/json',
   'Content-Type': 'application/json',
-  'accept-charset': 'UTF-8',
 });
 
 const DEFAULT_SKIP_PATTERNS = Object.freeze([
@@ -44,6 +45,8 @@ function normalizeClient(raw) {
     version: asNonEmptyString(client.version),
     androidApiLevel: asNonEmptyString(client.android_api_level) || DEFAULT_CLIENT.androidApiLevel,
     locale: asNonEmptyString(client.locale) || DEFAULT_CLIENT.locale,
+    bundleId: asNonEmptyString(client.bundle_id) || DEFAULT_CLIENT.bundleId,
+    timezoneOffsetSeconds: asNonEmptyString(client.timezone_offset_seconds) || DEFAULT_CLIENT.timezoneOffsetSeconds,
   };
 }
 
@@ -66,6 +69,12 @@ function buildBaseHeaders(parsed, client) {
   }
   if (client.locale) {
     baseHeaders['x-client-locale'] = client.locale;
+  }
+  if (client.bundleId) {
+    baseHeaders['x-client-bundle-id'] = client.bundleId;
+  }
+  if (client.timezoneOffsetSeconds) {
+    baseHeaders['x-client-timezone-offset'] = client.timezoneOffsetSeconds;
   }
   return baseHeaders;
 }

@@ -404,16 +404,20 @@ func TestConfigCloneIsDeepCopy(t *testing.T) {
 		Accounts:         []Account{{Email: "user@test.com", Token: "token"}},
 		ModelAliases:     map[string]string{"claude-sonnet-4-6": "deepseek-v4-flash"},
 		AdditionalFields: map[string]any{"custom": "value"},
+		Client: ClientConfig{
+			Name:        "DeepSeek",
+			BaseHeaders: map[string]string{"X-Test": "1"},
+		},
 	}
 
 	cloned := cfg.Clone()
 
-	// Modify original
 	cfg.Keys[0] = "modified"
 	cfg.Accounts[0].Email = "modified@test.com"
 	cfg.ModelAliases["claude-sonnet-4-6"] = "modified-model"
+	cfg.Client.Name = "changed"
+	cfg.Client.BaseHeaders["X-Test"] = "2"
 
-	// Cloned should not be affected
 	if cloned.Keys[0] != "key1" {
 		t.Fatalf("clone keys was affected by original change: %#v", cloned.Keys)
 	}
@@ -422,6 +426,12 @@ func TestConfigCloneIsDeepCopy(t *testing.T) {
 	}
 	if cloned.ModelAliases["claude-sonnet-4-6"] != "deepseek-v4-flash" {
 		t.Fatalf("clone model aliases was affected: %#v", cloned.ModelAliases)
+	}
+	if cloned.Client.Name != "DeepSeek" {
+		t.Fatalf("clone client name was affected: %#v", cloned.Client)
+	}
+	if cloned.Client.BaseHeaders["X-Test"] != "1" {
+		t.Fatalf("clone client headers was affected: %#v", cloned.Client.BaseHeaders)
 	}
 }
 

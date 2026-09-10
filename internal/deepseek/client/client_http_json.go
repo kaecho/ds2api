@@ -23,6 +23,9 @@ func (c *Client) postJSON(ctx context.Context, doer trans.Doer, fallback trans.D
 }
 
 func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallback trans.Doer, url string, headers map[string]string, payload any) (map[string]any, int, error) {
+	if payload == nil {
+		payload = map[string]any{}
+	}
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, 0, err

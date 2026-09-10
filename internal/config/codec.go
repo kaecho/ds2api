@@ -201,6 +201,7 @@ func (c Config) Clone() Config {
 		},
 		Prompt:               clonePromptConfig(c.Prompt),
 		ResponseReplacements: cloneResponseReplacementsConfig(c.ResponseReplacements),
+		Client:               cloneClientConfig(c.Client),
 		Vercel:               c.Vercel,
 		VercelSyncHash:       c.VercelSyncHash,
 		VercelSyncTime:       c.VercelSyncTime,
@@ -248,6 +249,17 @@ func cloneResponseReplacementsConfig(in ResponseReplacementsConfig) ResponseRepl
 	return ResponseReplacementsConfig{
 		Enabled: cloneBoolPtr(in.Enabled),
 		Rules:   slices.Clone(in.Rules),
+	}
+}
+
+func cloneClientConfig(in ClientConfig) ClientConfig {
+	return ClientConfig{
+		Name:            in.Name,
+		Platform:        in.Platform,
+		Version:         in.Version,
+		AndroidAPILevel: in.AndroidAPILevel,
+		Locale:          in.Locale,
+		BaseHeaders:     cloneStringMap(in.BaseHeaders),
 	}
 }
 

@@ -45,6 +45,38 @@ func TestPostJSONWithStatusUsesProvidedFallbackClient(t *testing.T) {
 	}
 }
 
+func TestPostJSONWithStatusMarshalsNilPayloadAsEmptyObject(t *testing.T) {
+	var seenBody string
+	client := &Client{}
+	primary := doerFunc(func(req *http.Request) (*http.Response, error) {
+		raw, err := io.ReadAll(req.Body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		seenBody = string(raw)
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+			Request:    req,
+		}, nil
+	})
+	_, _, err := client.postJSONWithStatus(
+		context.Background(),
+		primary,
+		failingDoer{err: errors.New("unused")},
+		"https://example.com/api",
+		nil,
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("postJSONWithStatus error: %v", err)
+	}
+	if seenBody != "{}" {
+		t.Fatalf("body=%q want={}", seenBody)
+	}
+}
+
 type doerFunc func(*http.Request) (*http.Response, error)
 
 func (f doerFunc) Do(req *http.Request) (*http.Response, error) {

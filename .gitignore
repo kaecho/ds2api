@@ -66,6 +66,9 @@ CLAUDE.local.md
 # Local tool bootstrap cache
 .tmp/
 
+# Local APK / reverse scratch
+tmp/
+
 # Chat history
 data/
 .codex

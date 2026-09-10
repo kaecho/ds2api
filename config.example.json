@@ -19,7 +19,7 @@
   ],
   "accounts": [
     {
-      "_comment": "邮箱登录方式。检测后会写入 banned / mute_until / test_status，重启后仍按该状态调度。",
+      "_comment": "邮箱登录。检测后会写入 banned / mute_until / test_status / device_id。device_id 空或 UUID 时登录会向数美取 B 前缀 SMID（需本机 node）。",
       "name": "主账号",
       "remark": "优先用于生产流量",
       "email": "example1@example.com",
@@ -55,7 +55,7 @@
     "prompt": ""
   },
   "client": {
-    "_comment": "客户端身份配置 — 覆盖 constants_shared.json 中的编译期默认值，留空则使用编译期默认值。",
+    "_comment": "客户端身份。留空则用 constants_shared.json 的 2.4.5 默认值：User-Agent DeepSeek/2.4.5 Android/35，以及 x-client-bundle-id / x-client-timezone-offset。",
     "name": "",
     "platform": "",
     "version": "",

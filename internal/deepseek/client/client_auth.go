@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"crypto/rand"
-	dsprotocol "ds2api/internal/deepseek/protocol"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -12,18 +11,22 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/google/uuid"
-
 	"ds2api/internal/auth"
 	"ds2api/internal/config"
+	dsprotocol "ds2api/internal/deepseek/protocol"
+	"ds2api/internal/deepseek/smid"
 )
 
 func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) {
 	clients := c.requestClientsForAccount(acc)
 	deviceID := strings.TrimSpace(acc.DeviceID)
-	if deviceID == "" {
-		deviceID = uuid.New().String()
-		if id := acc.Identifier(); id != "" {
+	if !smid.IsValid(deviceID) {
+		fetched, err := generateShumeiDeviceID(ctx)
+		if err != nil {
+			return "", fmt.Errorf("shumei device_id: %w", err)
+		}
+		deviceID = fetched
+		if id := acc.Identifier(); id != "" && c.Store != nil {
 			if err := c.Store.UpdateAccountDeviceID(id, deviceID); err != nil {
 				config.Logger.Warn("[login] persist device_id failed", "account", id, "error", err)
 			}
@@ -52,7 +55,7 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	} else {
 		return "", errors.New("missing email/mobile")
 	}
-	resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, dsprotocol.BaseHeaders, payload)
+	resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, c.identityHeaders(rangersID), payload)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +93,7 @@ func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAtte
 	refreshed := false
 	for attempts < maxAttempts {
 		headers := c.authHeaders(a.DeepSeekToken, a)
-		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreateSessionURL, headers, nil)
+		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreateSessionURL, headers, map[string]any{})
 		if err != nil {
 			config.Logger.Warn("[create_session] request error", "error", err, "account", a.AccountID)
 			attempts++
@@ -189,18 +192,26 @@ func (c *Client) GetPowForTarget(ctx context.Context, a *auth.RequestAuth, targe
 	return "", errors.New("get pow failed")
 }
 
-func (c *Client) authHeaders(token string, a *auth.RequestAuth) map[string]string {
-	headers := make(map[string]string, len(dsprotocol.BaseHeaders)+3)
+func (c *Client) identityHeaders(rangersID string) map[string]string {
+	headers := make(map[string]string, len(dsprotocol.BaseHeaders)+1)
 	for k, v := range dsprotocol.BaseHeaders {
 		headers[k] = v
 	}
-	headers["authorization"] = "Bearer " + token
-	if a != nil && a.Account.RangersID != "" {
-		headers["x-rangers-id"] = a.Account.RangersID
+	if rangersID != "" {
+		headers["x-rangers-id"] = rangersID
 	}
 	return headers
 }
 
+func (c *Client) authHeaders(token string, a *auth.RequestAuth) map[string]string {
+	rangersID := ""
+	if a != nil {
+		rangersID = a.Account.RangersID
+	}
+	headers := c.identityHeaders(rangersID)
+	headers["authorization"] = "Bearer " + token
+	return headers
+}
 func generateRangersID() string {
 	var b [8]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -208,6 +219,8 @@ func generateRangersID() string {
 	}
 	return strconv.FormatUint(binary.BigEndian.Uint64(b[:]), 10)
 }
+
+var generateShumeiDeviceID = smid.FetchProtocolDeviceID
 
 func isTokenInvalid(status int, code int, bizCode int, msg string, bizMsg string) bool {
 	msg = strings.ToLower(strings.TrimSpace(msg) + " " + strings.TrimSpace(bizMsg))

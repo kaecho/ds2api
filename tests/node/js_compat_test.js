@@ -24,6 +24,9 @@ test('js shared constants derive client headers from shared json', () => {
   assert.equal(deepseekConstants.BASE_HEADERS['x-client-version'], client.version);
   assert.equal(deepseekConstants.BASE_HEADERS['User-Agent'], `${client.name}/${client.version} Android/${client.android_api_level}`);
   assert.equal(deepseekConstants.BASE_HEADERS['Content-Type'], 'application/json');
+  assert.equal(deepseekConstants.BASE_HEADERS['x-client-bundle-id'], 'com.deepseek.chat');
+  assert.equal(deepseekConstants.BASE_HEADERS['x-client-timezone-offset'], '28800');
+  assert.equal(deepseekConstants.BASE_HEADERS['accept-charset'], undefined);
 });
 
 test('js compat: sse fixtures', () => {

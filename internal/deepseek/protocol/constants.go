@@ -24,10 +24,9 @@ const (
 )
 
 var defaultStaticBaseHeaders = map[string]string{
-	"Host":           "chat.deepseek.com",
-	"Accept":         "application/json",
-	"Content-Type":   "application/json",
-	"accept-charset": "UTF-8",
+	"Host":         "chat.deepseek.com",
+	"Accept":       "application/json",
+	"Content-Type": "application/json",
 }
 
 var defaultSkipContainsPatterns = []string{
@@ -59,7 +58,7 @@ var embeddedDefaults sharedConstants
 // embedded defaults. The BaseHeaders map is replaced atomically so concurrent
 // readers always see a complete map.
 func ApplyClientConfigOverrides(cfg ClientConfigOverride) {
-	client := embeddedDefaults.Client
+	client := normalizeClientConstants(embeddedDefaults.Client)
 	if cfg.Name != "" {
 		client.Name = cfg.Name
 	}
@@ -102,11 +101,13 @@ type ClientConfigOverride struct {
 }
 
 type clientConstants struct {
-	Name            string `json:"name"`
-	Platform        string `json:"platform"`
-	Version         string `json:"version"`
-	AndroidAPILevel string `json:"android_api_level"`
-	Locale          string `json:"locale"`
+	Name                  string `json:"name"`
+	Platform              string `json:"platform"`
+	Version               string `json:"version"`
+	AndroidAPILevel       string `json:"android_api_level"`
+	Locale                string `json:"locale"`
+	BundleID              string `json:"bundle_id"`
+	TimezoneOffsetSeconds string `json:"timezone_offset_seconds"`
 }
 
 type sharedConstants struct {
@@ -155,6 +156,12 @@ func normalizeClientConstants(in clientConstants) clientConstants {
 	if in.Locale == "" {
 		in.Locale = "zh_CN"
 	}
+	if in.BundleID == "" {
+		in.BundleID = "com.deepseek.chat"
+	}
+	if in.TimezoneOffsetSeconds == "" {
+		in.TimezoneOffsetSeconds = "28800"
+	}
 	return in
 }
 
@@ -181,6 +188,12 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 	}
 	if client.Locale != "" {
 		out["x-client-locale"] = client.Locale
+	}
+	if client.BundleID != "" {
+		out["x-client-bundle-id"] = client.BundleID
+	}
+	if client.TimezoneOffsetSeconds != "" {
+		out["x-client-timezone-offset"] = client.TimezoneOffsetSeconds
 	}
 	return out
 }
