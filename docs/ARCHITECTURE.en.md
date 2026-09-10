@@ -29,9 +29,10 @@ ds2api/
 │   ├── assistantturn/                    # Upstream output to canonical assistant turn / stream event semantics
 │   ├── completionruntime/                # Shared Go DeepSeek completion startup, collection, empty-output/account-switch retry
 │   ├── config/                           # Config loading/validation/hot reload
-│   ├── deepseek/                         # DeepSeek upstream client/protocol/transport
+│   ├── deepseek/                         # DeepSeek upstream client/protocol/transport/smid
 │   │   ├── client/                       # Login/session/completion/upload/delete calls
 │   │   ├── protocol/                     # DeepSeek URLs, constants, skip path/pattern
+│   │   ├── smid/                         # Shumei web-protocol SMID (login device_id)
 │   │   └── transport/                    # DeepSeek transport details
 │   ├── devcapture/                       # Dev capture and troubleshooting
 │   ├── format/                           # Response formatting layer
@@ -196,7 +197,7 @@ flowchart LR
 - `internal/assistantturn`: Go output-side canonical semantics, converting DeepSeek SSE collection results and stream finalization state into assistant turns and centralizing thinking, tool call, citation, usage, stop/error behavior.
 - `internal/completionruntime`: shared Go completion execution helpers for DeepSeek session/PoW/call startup, non-stream collection, empty-output retry, and one managed-account fresh retry before a final 429; streaming paths use it to start upstream requests, continue to use `internal/stream` for real-time consumption, and use `assistantturn` during finalization.
 - `internal/translatorcliproxy`: bridge compatibility layer for Claude/Gemini and OpenAI shape translation; it is not the main business protocol conversion center.
-- `internal/deepseek/{client,protocol,transport}`: upstream requests, sessions, PoW adaptation, protocol constants, and transport details.
+- `internal/deepseek/{client,protocol,smid,transport}`: upstream requests, sessions, PoW adaptation, Shumei SMID, protocol constants, and transport details.
 - `internal/js/chat-stream` + `api/chat-stream.js`: Vercel Node streaming bridge; Go prepare/release owns auth, account lease, and completion payload assembly, while Node relays real-time SSE with Go-aligned finalization and tool sieve semantics.
 - `internal/stream` + `internal/sse`: Go stream parsing and incremental assembly.
 - `internal/toolcall` + `internal/toolstream`: DSML shell compatibility plus canonical XML tool-call parsing and anti-leak sieve; DSML is normalized back to XML at the entrypoint, and internal parsing remains XML-based.

@@ -66,14 +66,14 @@ chat 登录：`POST https://chat.deepseek.com/api/v0/users/login`
 | --- | --- |
 | 空 / UUID | `RISK_DEVICE_DETECTED` |
 | 只升 UA 到 2.4.5，device_id 仍是 UUID | 一样被拒 |
-| web 协议 SMID（`B...`，node 跑 `sm_device_id.js`） | 登录成功，随后 session + PoW + completion 200 |
+| web 协议 SMID（`B...`，Go 调数美 `deviceprofile/v4`） | 登录成功，随后 session + PoW + completion 200 |
 
 注意：
 
 - 旧 ds2api 从来没有走数美，登录一直填 UUID。2.4.5 包里早就有 `libsmsdk.so`、`should_use_sm_device_id`、`shumei_verification`，是服务端现在开始卡 chat 登录。
 - dsreg 可以不带 SMID 注册，那是 `platform.deepseek.com/auth-api`，不是 `chat.deepseek.com` 登录。
 - 当前用 web 协议 `B...` 能过 Android chat 登录。没有去逆 `libsmsdk.so` 的 native SMID。服务端如果以后只认 native 值，再补。
-- 本机要有 `node`。实现：`internal/deepseek/smid`。`Login` 在账号 `device_id` 非法时拉取并写回账号配置。
+- 运行时不再调用 `node`。协议实现在 `internal/deepseek/smid`（JS 原稿留在 `js/` 作对照）。`Login` 在账号 `device_id` 非法时拉取并写回账号配置。
 
 远程配置里仍有 `should_use_sm_device_id`、`sm_sdk_host`、`sm_pass_code_type`。
 

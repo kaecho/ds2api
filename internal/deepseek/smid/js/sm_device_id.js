@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * 数美 deviceId 纯协议生成（逆向自 cdn.deepseek.com/static/chat/fp-1.min.js）
+ * 对照原稿：ds2api 运行时走 Go `internal/deepseek/smid`，不再 exec node。
  * 输出: B{deviceId}  或错误到 stderr
  */
 'use strict';

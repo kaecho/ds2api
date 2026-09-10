@@ -29,9 +29,10 @@ ds2api/
 │   ├── assistantturn/                    # 上游输出到统一 assistant turn / stream event 的语义层
 │   ├── completionruntime/                # Go 主路径共享 DeepSeek completion 启动、收集、空输出/切号 retry
 │   ├── config/                           # 配置加载、校验、热更新
-│   ├── deepseek/                         # DeepSeek 上游 client/protocol/transport
+│   ├── deepseek/                         # DeepSeek 上游 client/protocol/transport/smid
 │   │   ├── client/                       # 登录、会话、completion、上传/删除等上游调用
 │   │   ├── protocol/                     # DeepSeek URL、常量、skip path/pattern
+│   │   ├── smid/                         # 数美 web 协议 SMID（登录 device_id）
 │   │   └── transport/                    # DeepSeek 传输层细节
 │   ├── devcapture/                       # 开发抓包与调试采集
 │   ├── format/                           # 响应格式化层
@@ -196,7 +197,7 @@ flowchart LR
 - `internal/assistantturn`：Go 输出侧统一语义层，把 DeepSeek SSE 收集结果和流式收尾状态归一成 assistant turn，集中处理 thinking、tool call、citation、usage、stop/error 语义。
 - `internal/completionruntime`：Go surface 共享的 completion 执行辅助，负责 DeepSeek session/PoW/call 启动、非流式 collect、empty-output retry，以及托管账号在最终 429 前的一次切号 fresh retry；流式路径复用它启动上游请求，继续用 `internal/stream` 做实时消费，并在最终收尾阶段接入 `assistantturn`。
 - `internal/translatorcliproxy`：Claude/Gemini 与 OpenAI 结构互转的桥接兼容层，不作为主业务协议转换中心。
-- `internal/deepseek/{client,protocol,transport}`：上游请求、会话、PoW 适配、协议常量与传输层。
+- `internal/deepseek/{client,protocol,smid,transport}`：上游请求、会话、PoW 适配、数美 SMID、协议常量与传输层。
 - `internal/js/chat-stream` + `api/chat-stream.js`：Vercel Node 流式桥；Go prepare/release 管理鉴权、账号租约和 completion payload，Node 侧负责实时 SSE 转发并保持 Go 对齐的终结态和 tool sieve 语义。
 - `internal/stream` + `internal/sse`：Go 流式解析与增量处理。
 - `internal/toolcall` + `internal/toolstream`：DSML 外壳兼容与 canonical XML 工具调用解析、防泄漏筛分；DSML 会在入口归一化回 XML，内部仍按 XML 语义解析。
