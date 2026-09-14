@@ -226,4 +226,4 @@ flowchart LR
 - 架构与目录：`docs/ARCHITECTURE*.md`（本文件）
 - 接口协议：`API.md` / `API.en.md`
 - 部署、测试、贡献：`docs/DEPLOY*`、`docs/TESTING.md`、`docs/CONTRIBUTING*`
-- 专题：`docs/toolcall-semantics.md`、`docs/DeepSeekSSE行为结构说明-2026-04-05.md`、`docs/DeepSeekAndroid客户端逆向-2026-09-10.md`
+- 专题：`docs/toolcall-semantics.md`、`docs/DeepSeekSSE行为结构说明-2026-04-05.md`、`docs/DeepSeekAndroid客户端逆向-2026-09-14.md`、`docs/DeepSeekAndroid客户端逆向-2026-09-10.md`

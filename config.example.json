@@ -55,7 +55,7 @@
     "prompt": ""
   },
   "client": {
-    "_comment": "客户端身份。留空则用 constants_shared.json 的 2.4.5 默认值：User-Agent DeepSeek/2.4.5 Android/35，以及 x-client-bundle-id / x-client-timezone-offset。",
+    "_comment": "客户端身份。留空则用 constants_shared.json 的 2.5.1 默认值：User-Agent DeepSeek/2.5.1 Android/36，以及 x-client-bundle-id / x-client-timezone-offset。",
     "name": "",
     "platform": "",
     "version": "",

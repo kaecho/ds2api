@@ -94,10 +94,10 @@ func TestLoginSendsNativeClientIdentityHeaders(t *testing.T) {
 	if got := seenHeaders.Get("x-client-timezone-offset"); got != "28800" {
 		t.Fatalf("x-client-timezone-offset=%q", got)
 	}
-	if got := seenHeaders.Get("x-client-version"); got != "2.4.5" {
+	if got := seenHeaders.Get("x-client-version"); got != "2.5.1" {
 		t.Fatalf("x-client-version=%q", got)
 	}
-	if got := seenHeaders.Get("User-Agent"); got != "DeepSeek/2.4.5 Android/35" {
+	if got := seenHeaders.Get("User-Agent"); got != "DeepSeek/2.5.1 Android/36" {
 		t.Fatalf("User-Agent=%q", got)
 	}
 	if got := seenHeaders.Get("accept-charset"); got != "" {

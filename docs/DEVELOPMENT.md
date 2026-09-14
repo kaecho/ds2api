@@ -46,7 +46,7 @@ gofmt -w <changed-go-files>
 | API 请求归一到网页纯文本上下文 | `internal/promptcompat`、`docs/prompt-compatibility.md` |
 | 工具调用解析与流式防泄漏 | `internal/toolcall`、`internal/toolstream`、`docs/toolcall-semantics.md` |
 | DeepSeek 上游调用、登录、PoW、代理 | `internal/deepseek/client`、`internal/deepseek/transport` |
-| Android 客户端身份 / 数美 SMID / model_type | `internal/deepseek/protocol`、`internal/deepseek/smid`、`docs/DeepSeekAndroid客户端逆向-2026-09-10.md` |
+| Android 客户端身份 / 数美 SMID / model_type | `internal/deepseek/protocol`、`internal/deepseek/smid`、`docs/DeepSeekAndroid客户端逆向-2026-09-14.md` |
 | 账号池、并发槽位、等待队列 | `internal/account` |
 | Admin API | `internal/httpapi/admin` |
 | WebUI 页面 | `webui/src/layout/DashboardShell.jsx`、`webui/src/features/*` |

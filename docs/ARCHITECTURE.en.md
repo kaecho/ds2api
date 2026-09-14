@@ -226,4 +226,4 @@ flowchart LR
 - Architecture & layout: `docs/ARCHITECTURE*.md` (this file)
 - API contracts: `API.md` / `API.en.md`
 - Deployment/testing/contributing: `docs/DEPLOY*`, `docs/TESTING.md`, `docs/CONTRIBUTING*`
-- Deep topics: `docs/toolcall-semantics.md`, `docs/DeepSeekSSE行为结构说明-2026-04-05.md`, `docs/DeepSeekAndroid客户端逆向-2026-09-10.md`
+- Deep topics: `docs/toolcall-semantics.md`, `docs/DeepSeekSSE行为结构说明-2026-04-05.md`, `docs/DeepSeekAndroid客户端逆向-2026-09-14.md`, `docs/DeepSeekAndroid客户端逆向-2026-09-10.md`

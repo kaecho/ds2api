@@ -1,6 +1,8 @@
 # DeepSeek Android 2.4.5 客户端逆向（2026-09-10）
 
 > 第三方观察笔记，不是官方协议。对象是 Google Play 包 `com.deepseek.chat` **2.4.5**（`versionCode` 265），对照仓库里 ds2api 的上游模拟。
+>
+> 后续包：[2.5.1（2026-09-14）](./DeepSeekAndroid客户端逆向-2026-09-14.md)。身份头和 TTS 字段以那份为准。
 > 文档导航：[文档总索引](./README.md) / [prompt 兼容主链路](./prompt-compatibility.md) / [SSE 行为结构](./DeepSeekSSE行为结构说明-2026-04-05.md)
 
 后续若官方再发版，优先核对三件事：登录 `device_id`、请求头身份、completion 的 `model_type` 是否还是 `default` / `expert` / `vision`。

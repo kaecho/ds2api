@@ -322,6 +322,6 @@ parse SSE block
 1. `data:` 事件中仍大量出现 `{"v":"..."}` 的无路径增量（`p` 缺失），解析器必须把空路径视为可见正文候选，而不能只依赖 `response/content`。
 2. 对象形态 `v`（如 `{"text":"..."}` / `{"content":"..."}`）仍会出现，且可能与无路径 chunk 混用；仅按字符串处理会导致正文丢块。
 3. 多轮 continuation 场景下，后续 chunk 可能不再重复显式 `status`，状态机需要保留上一轮 `INCOMPLETE` 语义直到出现终态。
-4. 2026-04-29 起客户端头部版本基线上调到 `x-client-version: 2.0.3`，否则部分账号会出现上游行为不一致（包括空输出与补轮异常）。当前官方 Android `2.4.5` 还会固定发送 `x-client-bundle-id: com.deepseek.chat`、`x-client-timezone-offset`（秒，中国时区为 `28800`），并且登录请求也带 `x-rangers-id`。User-Agent 形如 `DeepSeek/2.4.5 Android/35`。登录 `device_id`、会话绑档和 UI 融合后的 `model_type` 见 [Android 2.4.5 客户端逆向](./DeepSeekAndroid客户端逆向-2026-09-10.md)。
+4. 2026-04-29 起客户端头部版本基线上调到 `x-client-version: 2.0.3`，否则部分账号会出现上游行为不一致（包括空输出与补轮异常）。当前官方 Android `2.5.1` 还会固定发送 `x-client-bundle-id: com.deepseek.chat`、`x-client-timezone-offset`（秒，中国时区为 `28800`），并且登录请求也带 `x-rangers-id`。User-Agent 形如 `DeepSeek/2.5.1 Android/36`。登录 `device_id`、会话绑档和 UI 融合后的 `model_type` 见 [Android 2.5.1 客户端逆向](./DeepSeekAndroid客户端逆向-2026-09-14.md)。
 
 建议：新增样本默认回放应优先覆盖「长文本 + 多轮 + 无路径 chunk」组合，避免只用短样本导致回归漏检。

@@ -14,8 +14,11 @@ func TestSharedConstantsLoaded(t *testing.T) {
 	if ClientVersion != client.Version {
 		t.Fatalf("unexpected client version=%q", ClientVersion)
 	}
-	if ClientVersion != "2.4.5" {
+	if ClientVersion != "2.5.1" {
 		t.Fatalf("unexpected client version=%q", ClientVersion)
+	}
+	if client.AndroidAPILevel != "36" {
+		t.Fatalf("unexpected android api level=%q", client.AndroidAPILevel)
 	}
 	wantUserAgent := client.Name + "/" + client.Version + " Android/" + client.AndroidAPILevel
 	if BaseHeaders["User-Agent"] != wantUserAgent {

@@ -41,7 +41,7 @@ export default function ClientSection({ t, form, setForm }) {
                             ...prev,
                             client: { ...prev.client, version: e.target.value },
                         }))}
-                        placeholder="2.4.5"
+                        placeholder="2.5.1"
                         className="w-full bg-background border border-border rounded-lg px-3 py-2"
                     />
                 </label>
@@ -54,7 +54,7 @@ export default function ClientSection({ t, form, setForm }) {
                             ...prev,
                             client: { ...prev.client, android_api_level: e.target.value },
                         }))}
-                        placeholder="35"
+                        placeholder="36"
                         className="w-full bg-background border border-border rounded-lg px-3 py-2"
                     />
                 </label>

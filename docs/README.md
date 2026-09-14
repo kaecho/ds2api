@@ -20,6 +20,7 @@
 - [API -> 网页对话纯文本兼容主链路说明](./prompt-compatibility.md)
 - [Tool Calling 统一语义](./toolcall-semantics.md)
 - [DeepSeek SSE 行为结构说明（逆向观察）](./DeepSeekSSE行为结构说明-2026-04-05.md)
+- [DeepSeek Android 2.5.1 客户端逆向（相对 2.4.5 的差）](./DeepSeekAndroid客户端逆向-2026-09-14.md)
 - [DeepSeek Android 2.4.5 客户端逆向（登录 SMID / 模型档）](./DeepSeekAndroid客户端逆向-2026-09-10.md)
 
 ### 文档维护约定
@@ -53,6 +54,7 @@ Recommended reading order:
 - [API -> pure-text web-chat compatibility pipeline](./prompt-compatibility.md)
 - [Tool-calling unified semantics](./toolcall-semantics.md)
 - [DeepSeek SSE behavior notes (reverse-engineered)](./DeepSeekSSE行为结构说明-2026-04-05.md)
+- [DeepSeek Android 2.5.1 client reverse notes (delta vs 2.4.5)](./DeepSeekAndroid客户端逆向-2026-09-14.md)
 - [DeepSeek Android 2.4.5 client reverse notes (login SMID / model_type)](./DeepSeekAndroid客户端逆向-2026-09-10.md)
 
 ### Maintenance conventions
